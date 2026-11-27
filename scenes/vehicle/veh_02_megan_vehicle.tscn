@@ -1,0 +1,118 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle/saipa_vehicle_controller.gd" id="1_ctrl"]
+[ext_resource type="PackedScene" path="res://scenes/vehicle/veh_02_megan_visual.tscn" id="2_vis"]
+[ext_resource type="PackedScene" path="res://assets/vehicle/carpack/veh_02_megan/veh_02_megan_wheel.glb" id="3_wheel"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lower"]
+size = Vector3(1.77, 0.56, 4.38)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cabin"]
+size = Vector3(1.5, 0.79, 2.24)
+
+[node name="RenaultMeganVehicle" type="VehicleBody3D"]
+mass = 1315.0
+center_of_mass_mode = 1
+center_of_mass = Vector3(0, 0.21, 0.08)
+continuous_cd = true
+can_sleep = false
+script = ExtResource("1_ctrl")
+vehicle_id = "veh_02_megan"
+vehicle_name_fa = "رنو مگان"
+vehicle_mass_kg = 1315.0
+center_of_mass_local = Vector3(0, 0.21, 0.08)
+max_engine_force_n = 3650.0
+max_reverse_force_n = 2100.0
+max_forward_speed_kmh = 195.0
+service_brake_force = 90.0
+handbrake_rear_force = 115.0
+wheel_radius_m = 0.3213
+suspension_stiffness = 80.3
+suspension_max_force_n = 16611.0
+damping_compression = 3.29
+damping_relaxation = 4.24
+anti_roll_stiffness_nm = 3599.0
+
+[node name="CollisionLowerHull" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.58, -0.068)
+shape = SubResource("BoxShape3D_lower")
+
+[node name="CollisionUpperCabin" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, -0.21)
+shape = SubResource("BoxShape3D_cabin")
+
+[node name="WheelFL" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.80813, 0.3686, 1.36207)
+use_as_traction = true
+use_as_steering = true
+wheel_roll_influence = 0.03
+wheel_radius = 0.3213
+wheel_rest_length = 0.12
+wheel_friction_slip = 1.92
+suspension_travel = 0.16
+suspension_stiffness = 80.3
+suspension_max_force = 16611.0
+damping_compression = 3.29
+damping_relaxation = 4.24
+
+[node name="WheelFR" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.80764, 0.3686, 1.36207)
+use_as_traction = true
+use_as_steering = true
+wheel_roll_influence = 0.03
+wheel_radius = 0.3213
+wheel_rest_length = 0.12
+wheel_friction_slip = 1.92
+suspension_travel = 0.16
+suspension_stiffness = 80.3
+suspension_max_force = 16611.0
+damping_compression = 3.29
+damping_relaxation = 4.24
+
+[node name="WheelRL" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.80813, 0.3686, -1.41158)
+wheel_roll_influence = 0.03
+wheel_radius = 0.3213
+wheel_rest_length = 0.12
+wheel_friction_slip = 1.98
+suspension_travel = 0.16
+suspension_stiffness = 80.3
+suspension_max_force = 16611.0
+damping_compression = 3.29
+damping_relaxation = 4.24
+
+[node name="WheelRR" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.80764, 0.3686, -1.41158)
+wheel_roll_influence = 0.03
+wheel_radius = 0.3213
+wheel_rest_length = 0.12
+wheel_friction_slip = 1.98
+suspension_travel = 0.16
+suspension_stiffness = 80.3
+suspension_max_force = 16611.0
+damping_compression = 3.29
+damping_relaxation = 4.24
+
+[node name="SaipaPrideVisual" parent="." instance=ExtResource("2_vis")]
+
+[node name="VisualWheels" type="Node3D" parent="."]
+
+[node name="VisWheelFL" type="Node3D" parent="VisualWheels"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.80813, 0.3213, 1.36207)
+
+[node name="WheelMesh" parent="VisualWheels/VisWheelFL" instance=ExtResource("3_wheel")]
+
+[node name="VisWheelFR" type="Node3D" parent="VisualWheels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.80764, 0.3213, 1.36207)
+
+[node name="WheelMesh" parent="VisualWheels/VisWheelFR" instance=ExtResource("3_wheel")]
+
+[node name="VisWheelRL" type="Node3D" parent="VisualWheels"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.80813, 0.3213, -1.41158)
+
+[node name="WheelMesh" parent="VisualWheels/VisWheelRL" instance=ExtResource("3_wheel")]
+
+[node name="VisWheelRR" type="Node3D" parent="VisualWheels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.80764, 0.3213, -1.41158)
+
+[node name="WheelMesh" parent="VisualWheels/VisWheelRR" instance=ExtResource("3_wheel")]

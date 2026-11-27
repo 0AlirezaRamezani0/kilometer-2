@@ -1,0 +1,110 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/preview/asset_integration_preview.gd" id="1_prev"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazirmatn-Bold.ttf" id="2_fbold"]
+[ext_resource type="FontFile" path="res://assets/fonts/Vazirmatn-Medium.ttf" id="3_fmed"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_studio"]
+sky_top_color = Color(0.16, 0.22, 0.32, 1)
+sky_horizon_color = Color(0.36, 0.44, 0.54, 1)
+ground_bottom_color = Color(0.10, 0.12, 0.15, 1)
+ground_horizon_color = Color(0.26, 0.30, 0.36, 1)
+sun_angle_max = 28.0
+
+[sub_resource type="Sky" id="Sky_studio"]
+sky_material = SubResource("ProceduralSkyMaterial_studio")
+
+[sub_resource type="Environment" id="Environment_studio"]
+background_mode = 2
+sky = SubResource("Sky_studio")
+ambient_light_source = 3
+ambient_light_color = Color(0.76, 0.82, 0.90, 1)
+ambient_light_sky_contribution = 0.72
+ambient_light_energy = 1.05
+tonemap_mode = 2
+tonemap_exposure = 1.04
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.11, 0.13, 0.16, 1)
+metallic = 0.08
+roughness = 0.78
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_floor"]
+material = SubResource("StandardMaterial3D_floor")
+size = Vector2(46, 36)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner"]
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
+bg_color = Color(0.04, 0.06, 0.11, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.28, 0.64, 0.96, 0.85)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="AssetIntegrationPreview" type="Node3D"]
+script = ExtResource("1_prev")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_studio")
+
+[node name="KeySunLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.819152, -0.40558, 0.40558, 0, 0.707107, 0.707107, -0.573576, -0.579228, 0.579228, 0, 12, 0)
+light_color = Color(1, 0.98, 0.95, 1)
+light_energy = 1.45
+shadow_enabled = true
+directional_shadow_max_distance = 38.0
+
+[node name="FillRimLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.766044, 0.321394, -0.55667, 0, 0.866025, 0.5, 0.642788, 0.383022, -0.663414, 0, 9, 0)
+light_color = Color(0.78, 0.88, 1, 1)
+light_energy = 0.58
+shadow_enabled = false
+
+[node name="StudioFloor" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.045, 0)
+mesh = SubResource("PlaneMesh_floor")
+
+[node name="ShowcaseVehicles" type="Node3D" parent="."]
+
+[node name="PreviewCamera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.906308, 0.422618, 0, -0.422618, 0.906308, 0, 5.85, 11.8)
+current = true
+fov = 46.0
+
+[node name="OverlayHud" type="CanvasLayer" parent="."]
+
+[node name="BannerPanel" type="PanelContainer" parent="OverlayHud"]
+offset_left = 20.0
+offset_top = 16.0
+offset_right = 920.0
+offset_bottom = 86.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
+
+[node name="BannerMargin" type="MarginContainer" parent="OverlayHud/BannerPanel"]
+layout_mode = 2
+
+[node name="BannerVBox" type="VBoxContainer" parent="OverlayHud/BannerPanel/BannerMargin"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="TitleLabel" type="Label" parent="OverlayHud/BannerPanel/BannerMargin/BannerVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56, 0.86, 1, 1)
+theme_override_fonts/font = ExtResource("2_fbold")
+theme_override_font_sizes/font_size = 16
+text = "SAIPA BETA 3 — INTEGRATED 6-VEHICLE STUDIO PREVIEW (GODOT 4.7.2)"
+
+[node name="SubtitleLabel" type="Label" parent="OverlayHud/BannerPanel/BannerMargin/BannerVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.91, 0.97, 1)
+theme_override_fonts/font = ExtResource("3_fmed")
+theme_override_font_sizes/font_size = 13
+text = "5 Integrated Source A Vehicles (Tara, Megan, Pride 132, Quick, Samand EF7) + Baseline Sport Pride"

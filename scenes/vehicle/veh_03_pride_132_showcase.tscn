@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicle/veh_03_pride_132_visual.tscn" id="1_bodyvis"]
+[ext_resource type="PackedScene" path="res://assets/vehicle/carpack/veh_03_pride_132/veh_03_pride_132_wheel.glb" id="2_wheelglb"]
+
+[node name="SaipaPride132Showcase" type="Node3D"]
+
+[node name="SaipaPride132Visual" parent="." instance=ExtResource("1_bodyvis")]
+
+[node name="WheelMountFL" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.75943, 0.3303, 1.43661)
+
+[node name="WheelMesh" parent="WheelMountFL" instance=ExtResource("2_wheelglb")]
+
+[node name="WheelMountFR" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.749, 0.3303, 1.43661)
+
+[node name="WheelMesh" parent="WheelMountFR" instance=ExtResource("2_wheelglb")]
+
+[node name="WheelMountRL" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.75974, 0.3303, -1.20725)
+
+[node name="WheelMesh" parent="WheelMountRL" instance=ExtResource("2_wheelglb")]
+
+[node name="WheelMountRR" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.74867, 0.3303, -1.20725)
+
+[node name="WheelMesh" parent="WheelMountRR" instance=ExtResource("2_wheelglb")]

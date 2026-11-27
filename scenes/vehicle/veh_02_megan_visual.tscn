@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle/saipa_visual_model.gd" id="1_visscript"]
+[ext_resource type="PackedScene" path="res://assets/vehicle/carpack/veh_02_megan/veh_02_megan_body.glb" id="2_bodyglb"]
+
+[node name="RenaultMeganVisual" type="Node3D"]
+script = ExtResource("1_visscript")
+headlight_pos_fl = Vector3(0.6355, 0.6835, 1.9384)
+body_paint_color = Color(0.76, 0.79, 0.84, 1)
+
+[node name="BodyRig" parent="." instance=ExtResource("2_bodyglb")]

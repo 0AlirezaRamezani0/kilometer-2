@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle/saipa_visual_model.gd" id="1_visscript"]
+[ext_resource type="PackedScene" path="res://assets/vehicle/saipa_pride_body.glb" id="2_bodyglb"]
+
+[node name="SaipaVisualModel" type="Node3D"]
+script = ExtResource("1_visscript")
+
+[node name="BodyRig" parent="." instance=ExtResource("2_bodyglb")]

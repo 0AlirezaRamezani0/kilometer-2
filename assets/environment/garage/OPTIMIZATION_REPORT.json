@@ -1,0 +1,17 @@
+{
+ "before_glb_bytes": 6010560,
+ "after_glb_bytes": 1498132,
+ "shrink": 4.01,
+ "before_meshes": 49,
+ "before_verts": 10162,
+ "before_tris": 10315,
+ "before_materials": 16,
+ "before_images": 11,
+ "before_tex_bytes": 20774912,
+ "after_meshes": 1,
+ "after_verts": 2859,
+ "after_tris": 5458,
+ "after_materials": 16,
+ "after_images": 11,
+ "after_tex_bytes": 6619136
+}

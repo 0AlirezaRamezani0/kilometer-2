@@ -1,0 +1,14 @@
+# Godot 4 — regenerable editor/import cache (recreated on first import)
+.godot/
+
+# Local export output (builds are not source)
+export/
+build/
+*.apk
+*.aab
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*~
+*.tmp

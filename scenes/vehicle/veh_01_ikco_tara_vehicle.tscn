@@ -1,0 +1,118 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle/saipa_vehicle_controller.gd" id="1_ctrl"]
+[ext_resource type="PackedScene" path="res://scenes/vehicle/veh_01_ikco_tara_visual.tscn" id="2_vis"]
+[ext_resource type="PackedScene" path="res://assets/vehicle/carpack/veh_01_ikco_tara/veh_01_ikco_tara_wheel.glb" id="3_wheel"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lower"]
+size = Vector3(1.76, 0.56, 4.63)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cabin"]
+size = Vector3(1.5, 0.68, 2.36)
+
+[node name="IkcoTaraVehicle" type="VehicleBody3D"]
+mass = 1220.0
+center_of_mass_mode = 1
+center_of_mass = Vector3(0, 0.21, 0.08)
+continuous_cd = true
+can_sleep = false
+script = ExtResource("1_ctrl")
+vehicle_id = "veh_01_ikco_tara"
+vehicle_name_fa = "ایران‌خودرو تارا"
+vehicle_mass_kg = 1220.0
+center_of_mass_local = Vector3(0, 0.21, 0.08)
+max_engine_force_n = 3350.0
+max_reverse_force_n = 1950.0
+max_forward_speed_kmh = 190.0
+service_brake_force = 84.0
+handbrake_rear_force = 108.0
+wheel_radius_m = 0.3364
+suspension_stiffness = 74.5
+suspension_max_force_n = 15411.0
+damping_compression = 3.17
+damping_relaxation = 4.08
+anti_roll_stiffness_nm = 3339.0
+
+[node name="CollisionLowerHull" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.58, -0.012)
+shape = SubResource("BoxShape3D_lower")
+
+[node name="CollisionUpperCabin" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -0.15)
+shape = SubResource("BoxShape3D_cabin")
+
+[node name="WheelFL" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.82616, 0.3837, 1.51518)
+use_as_traction = true
+use_as_steering = true
+wheel_roll_influence = 0.03
+wheel_radius = 0.3364
+wheel_rest_length = 0.12
+wheel_friction_slip = 1.92
+suspension_travel = 0.16
+suspension_stiffness = 74.5
+suspension_max_force = 15411.0
+damping_compression = 3.17
+damping_relaxation = 4.08
+
+[node name="WheelFR" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.82522, 0.3837, 1.51518)
+use_as_traction = true
+use_as_steering = true
+wheel_roll_influence = 0.03
+wheel_radius = 0.3364
+wheel_rest_length = 0.12
+wheel_friction_slip = 1.92
+suspension_travel = 0.16
+suspension_stiffness = 74.5
+suspension_max_force = 15411.0
+damping_compression = 3.17
+damping_relaxation = 4.08
+
+[node name="WheelRL" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.82618, 0.3837, -1.38791)
+wheel_roll_influence = 0.03
+wheel_radius = 0.3364
+wheel_rest_length = 0.12
+wheel_friction_slip = 1.98
+suspension_travel = 0.16
+suspension_stiffness = 74.5
+suspension_max_force = 15411.0
+damping_compression = 3.17
+damping_relaxation = 4.08
+
+[node name="WheelRR" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8248, 0.3837, -1.38791)
+wheel_roll_influence = 0.03
+wheel_radius = 0.3364
+wheel_rest_length = 0.12
+wheel_friction_slip = 1.98
+suspension_travel = 0.16
+suspension_stiffness = 74.5
+suspension_max_force = 15411.0
+damping_compression = 3.17
+damping_relaxation = 4.08
+
+[node name="SaipaPrideVisual" parent="." instance=ExtResource("2_vis")]
+
+[node name="VisualWheels" type="Node3D" parent="."]
+
+[node name="VisWheelFL" type="Node3D" parent="VisualWheels"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.82616, 0.3364, 1.51518)
+
+[node name="WheelMesh" parent="VisualWheels/VisWheelFL" instance=ExtResource("3_wheel")]
+
+[node name="VisWheelFR" type="Node3D" parent="VisualWheels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.82522, 0.3364, 1.51518)
+
+[node name="WheelMesh" parent="VisualWheels/VisWheelFR" instance=ExtResource("3_wheel")]
+
+[node name="VisWheelRL" type="Node3D" parent="VisualWheels"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.82618, 0.3364, -1.38791)
+
+[node name="WheelMesh" parent="VisualWheels/VisWheelRL" instance=ExtResource("3_wheel")]
+
+[node name="VisWheelRR" type="Node3D" parent="VisualWheels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8248, 0.3364, -1.38791)
+
+[node name="WheelMesh" parent="VisualWheels/VisWheelRR" instance=ExtResource("3_wheel")]

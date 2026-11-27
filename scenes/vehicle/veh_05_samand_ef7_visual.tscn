@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle/saipa_visual_model.gd" id="1_visscript"]
+[ext_resource type="PackedScene" path="res://assets/vehicle/carpack/veh_05_samand_ef7/veh_05_samand_ef7_body.glb" id="2_bodyglb"]
+
+[node name="SamandEf7Visual" type="Node3D"]
+script = ExtResource("1_visscript")
+headlight_pos_fl = Vector3(0.6361, 0.6184, 2.0771)
+body_paint_color = Color(0.95, 0.95, 0.96, 1)
+
+[node name="BodyRig" parent="." instance=ExtResource("2_bodyglb")]

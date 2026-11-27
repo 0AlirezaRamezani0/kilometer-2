@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle/saipa_visual_model.gd" id="1_visscript"]
+[ext_resource type="PackedScene" path="res://assets/vehicle/carpack/veh_03_pride_132/veh_03_pride_132_body.glb" id="2_bodyglb"]
+
+[node name="SaipaPride132Visual" type="Node3D"]
+script = ExtResource("1_visscript")
+headlight_pos_fl = Vector3(0.5787, 0.6996, 2.0599)
+body_paint_color = Color(0.96, 0.96, 0.96, 1)
+
+[node name="BodyRig" parent="." instance=ExtResource("2_bodyglb")]
