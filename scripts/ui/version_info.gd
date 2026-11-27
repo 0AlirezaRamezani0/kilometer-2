@@ -8,8 +8,8 @@ extends RefCounted
 ## Change `BUILD` here, then run `python3 tools/sync_version.py` from the
 ## project root to push the value into export_presets.cfg and the docs.
 
-const BASE := "v0.2"
-const TRACK := "b6-clean-road"
+const BASE := "v0.3"
+const TRACK := "b1-android-lan"
 ## Android/Play versionCode — must only ever increase.
 ## v0.1-b2 was an undelivered redesign branch (session 1); b3 skips to code 3
 ## so the versionCode stays monotonic even if a b2 build was ever installed.
@@ -21,11 +21,15 @@ const TRACK := "b6-clean-road"
 ## v0.2-b2-racetrack-obj (the delivered desert circuit replaced by racetrack.obj; centreline,
 ## collision and surface regenerated from that mesh) uses code 8.
 ## v0.2-b4-brand-lan (brand loading lockup, K2 app icon and boot splash, LAN host discovery)
-## used code 10. v0.2-b6-clean-road (guard rails no longer drawn — the invisible walls stay —
-## and an opaque brand-black launcher icon so the Android launch splash can never show a white
-## card) uses code 12. v0.2-b5-logo-shoulders (loading screen back to the studio car render with the
+## used code 10. v0.2-b5-logo-shoulders (loading screen back to the studio car render with the
 ## KILOMETER logotype only, pale shoulder ribbons dropped from the drawn deck, start gantry
 ## rebuilt so the countdown lamps no longer float) uses code 11.
-const CODE := 12
+## v0.2-b6-clean-road (guard rails no longer drawn — the invisible walls stay — and an opaque
+## brand-black launcher icon so the Android launch splash can never show a white card) uses code 12.
+## v0.3-b1-android-lan (Android LAN multiplayer fixes: Wi-Fi/multicast permissions, interface-aware
+## LAN IP selection, port 42425 discovery/advertise fix, periodic beacons & hotspot subnet/gateway
+## targets, Persian-numeral IP normalization, SceneTransition queuing, and LAN sync freeze fix)
+## uses code 13.
+const CODE := 13
 const BUILD := BASE + "-" + TRACK
 const DISPLAY := "K2 · " + BUILD

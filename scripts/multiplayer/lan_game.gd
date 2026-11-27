@@ -27,11 +27,16 @@ var _remote_slot_tf := Transform3D.IDENTITY
 var _remote_wheel_spin: float = 0.0
 var _remote_prev_speed: float = 0.0
 var _remote_steer_vis: float = 0.0
+var _last_sync_msec: int = 0
+var _outlier_count: int = 0
+var _outlier_origin := Vector3.ZERO
 var _own_idx := 0
 var _tick := 0
 
 
 func _ready() -> void:
+	VehicleInputMap.ensure_actions()
+	SettingsManager.ensure_loaded()
 	_track = $EngineeredTestTrack
 	_rig = $VehicleCameraRig
 	_hud = $VehicleHud
@@ -64,8 +69,8 @@ func _session_active() -> bool:
 
 func _slot_transform(slot: int) -> Transform3D:
 	var tf := _track.get_spawn_transform()
-	if slot == 1:
-		tf.origin += tf.basis.x * SLOT_OFFSET
+	var side := -0.5 * SLOT_OFFSET if slot == 0 else 0.5 * SLOT_OFFSET
+	tf.origin += tf.basis.x * side
 	return tf
 
 
@@ -87,6 +92,7 @@ func _spawn_car(idx: int, slot: int, is_local: bool) -> SaipaVehicleController:
 		# Replica: no local physics, no input, no engine sound; the
 		# network stream drives its transform in _process, so disable
 		# engine FTI to avoid double interpolation on the remote car.
+		car.freeze_mode = RigidBody3D.FREEZE_MODE_KINEMATIC
 		car.freeze = true
 		car.set_physics_process(false)
 		car.read_desktop_input = false
@@ -109,10 +115,14 @@ func _announce_vehicle(idx: int) -> void:
 	if idx < 0 or idx >= VehicleCatalog.get_count():
 		return
 	var remote_slot := 0 if sender == 1 else 1
+	_remote_slot_tf = _slot_transform(remote_slot)
 	_remote_car = _spawn_car(idx, remote_slot, false)
 	_remote_car.name = "Player_%d" % sender
-	_remote_slot_tf = _slot_transform(remote_slot)
-	_remote_target = _remote_slot_tf
+	if _remote_has_state:
+		_remote_car.global_transform = _remote_target
+		_remote_car.reset_physics_interpolation()
+	else:
+		_remote_target = _remote_slot_tf
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered")
@@ -124,11 +134,21 @@ func _sync_state(tf: Transform3D) -> void:
 		return
 	if absf(o.x) > 620.0 or absf(o.z) > 720.0 or o.y < -5.0 or o.y > 80.0:
 		return
-	# Reject teleport-sized jumps (>12 m between 30 Hz updates); a real
-	# respawn arrives via _remote_reset and lands on the slot transform.
-	if _remote_has_state and o.distance_to(_remote_target.origin) > 12.0:
-		if o.distance_to(_remote_slot_tf.origin) > 1.5:
-			return
+	var now_msec := Time.get_ticks_msec()
+	if _remote_has_state:
+		var elapsed := maxf(0.05, float(now_msec - _last_sync_msec) / 1000.0) if _last_sync_msec > 0 else 1.0
+		var max_jump := maxf(24.0, 95.0 * elapsed)
+		if o.distance_to(_remote_target.origin) > max_jump and o.distance_to(_remote_slot_tf.origin) > 2.5:
+			# Recover after two consistent packets so a Wi-Fi stall or late scene entry
+			# can never freeze the remote replica for the rest of the match.
+			if _outlier_count >= 1 and o.distance_to(_outlier_origin) <= 18.0:
+				_outlier_count = 0
+			else:
+				_outlier_origin = o
+				_outlier_count += 1
+				return
+	_outlier_count = 0
+	_last_sync_msec = now_msec
 	_remote_target = tf
 	_remote_has_state = true
 
@@ -141,6 +161,8 @@ func _remote_reset() -> void:
 		_remote_car.global_transform = _remote_slot_tf
 		_remote_car.reset_physics_interpolation()
 		_remote_target = _remote_slot_tf
+		_outlier_count = 0
+		_last_sync_msec = Time.get_ticks_msec()
 		_remote_prev_speed = 0.0
 		_remote_steer_vis = 0.0
 
@@ -152,12 +174,16 @@ func _on_local_reset(_tf: Transform3D) -> void:
 
 func _physics_process(_delta: float) -> void:
 	_tick += 1
+	if _track != null and _local_car != null:
+		_track.update_telemetry(_local_car)
 	if not _session_active() or _local_car == null:
+		return
+	if _remote_car == null:
+		if _tick % 15 == 0:
+			rpc("_announce_vehicle", _own_idx)
 		return
 	if _tick % 2 == 0:
 		rpc("_sync_state", _local_car.global_transform)
-	if _remote_car == null and _tick % 60 == 0:
-		rpc("_announce_vehicle", _own_idx)
 
 
 func _process(delta: float) -> void:

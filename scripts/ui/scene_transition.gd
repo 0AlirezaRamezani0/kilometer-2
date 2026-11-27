@@ -33,6 +33,9 @@ const PROGRESS_ENTER := 0.12
 
 var _loader: LoadingScreen = null
 var _busy := false
+var _has_pending := false
+var _pending_path := ""
+var _pending_caption := ""
 
 
 func _ready() -> void:
@@ -61,6 +64,11 @@ func _ensure_loader() -> LoadingScreen:
 ## if a caller needs the completion edge (nothing in the game does — the screen owns it).
 func change_scene(path: String, caption: String = "") -> void:
 	if _busy:
+		# Never drop a state-driven transition (e.g. LAN handshake/disconnect during dwell):
+		# keep the latest requested target and run it as soon as the current screen finishes.
+		_has_pending = true
+		_pending_path = path
+		_pending_caption = caption
 		return
 	_busy = true
 	var loader := _ensure_loader()
@@ -84,6 +92,7 @@ func change_scene(path: String, caption: String = "") -> void:
 		if loader != null:
 			loader.dismiss()
 		_busy = false
+		_flush_pending()
 		return
 
 	if loader != null:
@@ -107,6 +116,18 @@ func change_scene(path: String, caption: String = "") -> void:
 		loader.dismiss()
 	_busy = false
 	loading_finished.emit()
+	_flush_pending()
+
+
+func _flush_pending() -> void:
+	if not _has_pending:
+		return
+	var next_path := _pending_path
+	var next_caption := _pending_caption
+	_has_pending = false
+	_pending_path = ""
+	_pending_caption = ""
+	change_scene.call_deferred(next_path, next_caption)
 
 
 ## Which plate the screen shows. The track load is the long one, so it gets the map plate.

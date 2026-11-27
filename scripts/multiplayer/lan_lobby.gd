@@ -38,6 +38,8 @@ var _hosts_empty: Label
 var _hosts_hint: Label
 var _search_btn: Button
 var _host_rows: Dictionary = {}
+var _own_ip_label: Label
+var _no_ip_label: Label
 
 
 func _ready() -> void:
@@ -154,18 +156,16 @@ func _ready() -> void:
 	_cards.add_child(host[0])
 	var host_box: VBoxContainer = host[1]
 	host_box.add_child(UiTheme.label("نشانی این دستگاه:", "CaptionLabel"))
-	var own_ip := LanSession.get_local_ip()
-	if own_ip != "":
-		var ip_lbl := UiTheme.ltr_label(own_ip, "NumericLabel")
-		ip_lbl.name = "OwnIpLabel"
-		ip_lbl.add_theme_font_size_override("font_size", UiTheme.TYPE_NUMERIC_LG)
-		ip_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		host_box.add_child(ip_lbl)
-	else:
-		var no_ip := UiTheme.label("نشانی پیدا نشد؛ اتصال Wi-Fi یا هات‌اسپات را بررسی کنید.", "BodyMutedLabel", true)
-		no_ip.name = "OwnIpLabel"
-		no_ip.add_theme_color_override("font_color", UiTheme.COLOR_WARNING)
-		host_box.add_child(no_ip)
+	_own_ip_label = UiTheme.ltr_label("", "NumericLabel")
+	_own_ip_label.name = "OwnIpLabel"
+	_own_ip_label.add_theme_font_size_override("font_size", UiTheme.TYPE_NUMERIC_LG)
+	_own_ip_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	host_box.add_child(_own_ip_label)
+	_no_ip_label = UiTheme.label("نشانی پیدا نشد؛ اتصال Wi-Fi یا هات‌اسپات را بررسی کنید.", "BodyMutedLabel", true)
+	_no_ip_label.name = "NoIpHint"
+	_no_ip_label.add_theme_color_override("font_color", UiTheme.COLOR_WARNING)
+	host_box.add_child(_no_ip_label)
+	_refresh_own_ip()
 	_create_btn = UiTheme.make_button("ساخت اتاق و انتظار", "CreateRoom", true, Vector2(0, UiTheme.CONTROL_HEIGHT_LG), "primary", "play")
 	_create_btn.pressed.connect(_on_create_pressed)
 	host_box.add_child(_create_btn)
@@ -183,7 +183,8 @@ func _ready() -> void:
 	_ip_field.placeholder_text = "192.168.1.2"
 	_ip_field.text_direction = Control.TEXT_DIRECTION_LTR
 	_ip_field.layout_direction = Control.LAYOUT_DIRECTION_LTR
-	_ip_field.virtual_keyboard_type = LineEdit.KEYBOARD_TYPE_NUMBER_DECIMAL
+	# KEYBOARD_TYPE_DEFAULT lets Android IMEs type multiple dots freely (NUMBER_DECIMAL blocks dots on many phones).
+	_ip_field.virtual_keyboard_type = LineEdit.KEYBOARD_TYPE_DEFAULT
 	_ip_field.custom_minimum_size = Vector2(0, UiTheme.TOUCH_MIN)
 	_ip_field.accessibility_name = "نشانی IP میزبان"
 	_ip_field.text_changed.connect(func(_t: String) -> void:
@@ -212,9 +213,12 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_relayout)
 	_relayout()
 	var initial := LanSession.status_text
+	var initial_err := false
 	if LanSession.state == LanSession.State.IDLE and (initial.begins_with("به میزبان متصل شدید") or initial == "اتصال لغو شد."):
 		initial = ""
-	_show_status(initial)
+	elif LanSession.state == LanSession.State.IDLE and (initial.contains("قطع شد") or initial.contains("برقرار نشد") or initial.contains("ناموفق") or initial.contains("پایان رسید")):
+		initial_err = true
+	_show_status(initial, initial_err)
 	_refresh_buttons()
 	var am := get_node_or_null("/root/AudioManager")
 	if am != null:
@@ -353,7 +357,9 @@ func _render_hosts(list: Array) -> void:
 		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		hb.add_child(col)
 		col.add_child(UiTheme.label("میزبان آماده است", "LabelStrong"))
-		var ip_lbl := UiTheme.ltr_label(ip, "CaptionLabel")
+		var host_name := str(h.get("name", "")).strip_edges()
+		var sub_text := ip if host_name == "" else "%s · %s" % [ip, host_name]
+		var ip_lbl := UiTheme.ltr_label(sub_text, "CaptionLabel")
 		ip_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		col.add_child(ip_lbl)
 		var connect_btn := UiTheme.make_button("اتصال", "ConnectHost", true, Vector2(0, UiTheme.TOUCH_MIN), "primary", "forward")
@@ -370,14 +376,29 @@ func _render_hosts(list: Array) -> void:
 		_hosts_hint.visible = true
 
 
+func _refresh_own_ip() -> void:
+	if _own_ip_label == null or _no_ip_label == null:
+		return
+	var ips := LanSession.get_local_ips()
+	if not ips.is_empty():
+		_own_ip_label.text = ips[0] if ips.size() == 1 else "%s  (%s)" % [ips[0], ips[1]]
+		_own_ip_label.visible = true
+		_no_ip_label.visible = false
+	else:
+		_own_ip_label.visible = false
+		_no_ip_label.visible = true
+
+
 func _on_hosts_changed(list: Array) -> void:
 	if not is_inside_tree():
 		return
+	_refresh_own_ip()
 	_render_hosts(list)
 	_refresh_buttons()
 
 
 func _on_search_pressed() -> void:
+	_refresh_own_ip()
 	LanSession.refresh_hosts()
 	if LanSession.hosts.is_empty():
 		_hosts_empty.text = "هنوز میزبانی پیدا نشد. روی دستگاه دوم «ساخت اتاق» را بزنید."
@@ -414,13 +435,16 @@ func _set_ip_error(msg: String) -> void:
 
 
 func _on_create_pressed() -> void:
+	_refresh_own_ip()
 	LanSession.host_room()
 	_refresh_buttons()
 	_cancel_btn.grab_focus()
 
 
 func _on_join_pressed() -> void:
-	var ip := _ip_field.text.strip_edges()
+	var ip := LanSession.normalize_ip(_ip_field.text)
+	if ip != _ip_field.text:
+		_ip_field.text = ip
 	if ip.is_empty():
 		_set_ip_error("نشانی IP میزبان را وارد کنید.")
 		_ip_field.grab_focus()
@@ -437,6 +461,7 @@ func _on_join_pressed() -> void:
 
 func _on_cancel_pressed() -> void:
 	LanSession.cancel()
+	_refresh_own_ip()
 	_refresh_buttons()
 	_create_btn.grab_focus()
 
@@ -444,6 +469,11 @@ func _on_cancel_pressed() -> void:
 func _on_back_pressed() -> void:
 	LanSession.cancel()
 	LanSession.open_menu()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		_on_back_pressed()
 
 
 func _unhandled_input(event: InputEvent) -> void:

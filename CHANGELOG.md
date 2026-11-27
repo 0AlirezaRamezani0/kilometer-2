@@ -1,6 +1,24 @@
 # Changelog (`CHANGELOG.md`)
 All notable changes to Kilometer 2 are documented in this file.
 
+## [v0.3-b1-android-lan] — Android LAN multiplayer fixes — 2026-11-27
+
+Version **v0.3-b1-android-lan**, Android versionCode **13**. Fixes the local LAN multiplayer flow on Android devices (Wi-Fi and mobile hotspot) and aligns project documentation/version metadata with `v0.3`.
+
+### Changed & Synced
+- `scripts/ui/version_info.gd`, `export_presets.cfg`, `README.md`, `AGENTS.md`, `documentation/ARCHITECTURE.md`, `tests/test_desert_circuit.gd`, `tests/test_ui_v3_design_system.gd`: bumped version to `v0.3-b1-android-lan` (versionCode `13`) via `tools/sync_version.py` and updated documentation to reflect LAN multiplayer and the current 20 test suites.
+
+### Fixed
+- `export_presets.cfg`: added Android `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, and `CHANGE_WIFI_MULTICAST_STATE` permissions required for LAN/Wi-Fi discovery and socket reception on Android devices.
+- `scripts/multiplayer/lan_session.gd`:
+  - `get_local_ip()` / `get_local_ips()` now inspect `IP.get_local_interfaces()` and prioritize Wi-Fi / Hotspot (`wlan`, `ap`, `swlan`) and RFC1918 subnets over cellular (`rmnet`) and VPN (`tun`) interfaces.
+  - Resolved UDP port `42425` collision when `host_room()` is called from `lan_lobby.gd` while `start_discovery()` already holds the listener socket; `_advertise` now uses an ephemeral sender port when `_listen` is active while `_listen` answers incoming beacons every `0.1 s`.
+  - Added periodic host announcements (`1.0 s`), periodic listener beacons (`1.5 s`), explicit IPv4 `"0.0.0.0"` UDP binds, directed `/24` subnet broadcasts, and `.1` hotspot-gateway unicast probes so discovery works reliably on Android hotspots and keeps hosts from expiring after `4 s`.
+  - Added `normalize_ip()` for Persian/Arabic numerals and decimal separators.
+- `scripts/ui/scene_transition.gd`: queued scene transitions requested while the 3-second loading dwell is active instead of silently dropping `_open_game()` or disconnect fallbacks.
+- `scripts/multiplayer/lan_lobby.gd`: switched `IpField` virtual keyboard from `NUMBER_DECIMAL` to `DEFAULT` (allowing multi-dot IP entry on Android IMEs), normalized Persian digits, refreshed local IP dynamically, and handled Android's `NOTIFICATION_WM_GO_BACK_REQUEST`.
+- `scripts/multiplayer/lan_game.gd`: prevented permanent remote-car sync freeze after scene-load timing skew or Wi-Fi packet stalls, switched the remote replica to `FREEZE_MODE_KINEMATIC`, centered spawn slots symmetrically on the 12 m track, and piped track telemetry in LAN mode.
+
 ## [v0.2-b2] — map + collision rework, playable — 2026-11-27
 
 The v0.2-b1 drive was rejected on play: invisible walls, a road that pinched to zero width, a

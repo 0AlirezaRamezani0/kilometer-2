@@ -12,13 +12,13 @@ extends Node
 ## from the bytecode, so a documented port is used instead.
 ##
 ## Two players on one Wi-Fi / hotspot, no internet needed:
-## one device hosts a room, the other joins by the host's LAN IP.
+## one device hosts a room, the other joins by discovery or the host's LAN IP.
 ## Registered as the "LanSession" autoload, like the original.
 
 const PORT := 42424
-## Host discovery (v0.3). A host answers one beacon with one reply on the same subnet, so the
-## other device can list it instead of asking the player to copy an IP by hand. Kept on a
-## separate port from the game so a beacon can never be mistaken for a connection attempt.
+## Host discovery (v0.3). A host answers beacons and periodically announces itself on the
+## local subnet so the other device lists it automatically without typing an IP.
+## Kept on a separate port from the game so a beacon can never be mistaken for a connection.
 const DISCOVERY_PORT := 42425
 ## Overridable so the automated two-session test can run host and listener on one machine
 ## (two sockets cannot share a UDP port). Real devices always use DISCOVERY_PORT.
@@ -26,6 +26,8 @@ const DISCOVERY_PORT_ENV := "K2_LAN_DISCOVERY_PORT"
 const BEACON := "K2LAN1?"
 const BEACON_REPLY := "K2LAN1!"
 const ADVERTISE_INTERVAL_SEC := 1.0
+const ADVERTISE_POLL_SEC := 0.15
+const BEACON_INTERVAL_SEC := 1.5
 const DISCOVERY_TIMEOUT_SEC := 2.0
 ## A host that stopped advertising is dropped from the list after this long.
 const HOST_TTL_SEC := 4.0
@@ -54,9 +56,12 @@ var _connect_timer: Timer = null
 ## Discovered LAN hosts: [{ip, port, name, seen_at}]. Never contains this device itself.
 var hosts: Array = []
 var _advertise: PacketPeerUDP = null
+var _advertise_owns_port := false
 var _listen: PacketPeerUDP = null
 var _advertise_timer: Timer = null
+var _advertise_accum := 0.0
 var _listen_timer: Timer = null
+var _listen_beacon_accum := 0.0
 var _session_name := "K2"
 
 
@@ -98,17 +103,135 @@ func _fail(msg: String) -> void:
 	_set_status(msg)
 
 
-## This device's LAN IPv4, skipping loopback and link-local — the
-## same rule the original used (it rejected 127.* and 169.254.*).
+static func normalize_ip(raw: String) -> String:
+	var s := raw.strip_edges()
+	if s.begins_with("::ffff:"):
+		s = s.substr(7)
+	const PERSIAN_DIGITS := "۰۱۲۳۴۵۶۷۸۹"
+	const ARABIC_DIGITS := "٠١٢٣٤٥٦٧٨٩"
+	for i in range(10):
+		s = s.replace(PERSIAN_DIGITS[i], str(i))
+		s = s.replace(ARABIC_DIGITS[i], str(i))
+	s = s.replace("٫", ".").replace("،", ".").replace(",", ".")
+	return s
+
+
+static func _is_private_lan_ipv4(ip: String) -> int:
+	if ip.begins_with("192.168."):
+		return 50
+	if ip.begins_with("10."):
+		return 30
+	if ip.begins_with("172."):
+		var parts := ip.split(".")
+		if parts.size() == 4 and parts[1].is_valid_int():
+			var second := int(parts[1])
+			if second >= 16 and second <= 31:
+				return 40
+	if ip.begins_with("100."):
+		var parts := ip.split(".")
+		if parts.size() == 4 and parts[1].is_valid_int():
+			var second := int(parts[1])
+			if second >= 64 and second <= 127:
+				return -50 # Carrier-grade NAT (mobile data)
+	return 0
+
+
+static func _interface_score(iface_name: String) -> int:
+	var n := iface_name.to_lower()
+	for bad in ["lo", "rmnet", "ccmni", "pdp", "wwan", "clat", "v4-", "tun", "tap", "ppp", "wg", "ipsec", "sit", "dummy", "docker", "veth", "virbr"]:
+		if n.begins_with(bad) or n.contains(bad):
+			return -1
+	for good in ["ap", "swlan", "softap", "wlan", "wifi", "eth", "en"]:
+		if n.begins_with(good) or n.contains(good):
+			return 100
+	return 10
+
+
+## Ordered list of this device's Wi-Fi / Hotspot / LAN IPv4 addresses, preferring
+## wireless/hotspot interfaces and RFC1918 private ranges over cellular/VPN tunnels.
+func get_local_ips() -> PackedStringArray:
+	var scored: Array = []
+	var seen: Dictionary = {}
+	for iface in IP.get_local_interfaces():
+		var iname := str(iface.get("name", ""))
+		var iscore := _interface_score(iname)
+		if iscore < 0:
+			continue
+		var addrs: Array = iface.get("addresses", [])
+		for raw_ip in addrs:
+			var ip := str(raw_ip)
+			if ip.contains(":") or ip == "0.0.0.0":
+				continue
+			if ip.begins_with("127.") or ip.begins_with("169.254."):
+				continue
+			if not ip.is_valid_ip_address() or seen.has(ip):
+				continue
+			seen[ip] = true
+			scored.append({"ip": ip, "score": iscore + _is_private_lan_ipv4(ip)})
+	if scored.is_empty():
+		for ip in IP.get_local_addresses():
+			if ip.contains(":") or ip == "0.0.0.0":
+				continue
+			if ip.begins_with("127.") or ip.begins_with("169.254."):
+				continue
+			if not ip.is_valid_ip_address() or seen.has(ip):
+				continue
+			seen[ip] = true
+			scored.append({"ip": ip, "score": _is_private_lan_ipv4(ip)})
+	scored.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return int(a["score"]) > int(b["score"]))
+	var out := PackedStringArray()
+	for item in scored:
+		out.append(str(item["ip"]))
+	return out
+
+
+## This device's primary LAN IPv4, skipping loopback, link-local, cellular and VPN
+## interfaces where Wi-Fi / Hotspot addresses are available.
 func get_local_ip() -> String:
-	for ip in IP.get_local_addresses():
-		if ip.contains(":"):
+	var ips := get_local_ips()
+	return ips[0] if not ips.is_empty() else ""
+
+
+func _is_own_ip(ip: String) -> bool:
+	var norm := normalize_ip(ip)
+	if norm == "127.0.0.1":
+		return true
+	for local_ip in IP.get_local_addresses():
+		if normalize_ip(local_ip) == norm:
+			return true
+	return false
+
+
+## Builds UDP discovery destination addresses: global broadcast, directed /24 subnet
+## broadcasts (critical on Android Hotspot where 255.255.255.255 routes out cellular or
+## fails without a default gateway), and the /24 .1 gateway (hotspot owner IP).
+func _discovery_targets(include_gateway: bool) -> PackedStringArray:
+	var targets: Array[String] = ["255.255.255.255"]
+	var seen := {"255.255.255.255": true}
+	for ip in get_local_ips():
+		var parts := ip.split(".")
+		if parts.size() != 4:
 			continue
-		if ip.begins_with("127.") or ip.begins_with("169.254."):
-			continue
-		if ip.is_valid_ip_address():
-			return ip
-	return ""
+		var prefix := "%s.%s.%s" % [parts[0], parts[1], parts[2]]
+		var bcast := prefix + ".255"
+		if not seen.has(bcast):
+			seen[bcast] = true
+			targets.append(bcast)
+		if include_gateway:
+			var gw := prefix + ".1"
+			if gw != ip and not seen.has(gw):
+				seen[gw] = true
+				targets.append(gw)
+	return PackedStringArray(targets)
+
+
+func _send_to_targets(sock: PacketPeerUDP, payload: PackedByteArray, port: int, include_gateway: bool) -> void:
+	if sock == null:
+		return
+	for target in _discovery_targets(include_gateway):
+		sock.set_dest_address(target, port)
+		sock.put_packet(payload)
 
 
 func host_room() -> Error:
@@ -138,7 +261,7 @@ func host_room() -> Error:
 
 func join_room(ip: String) -> Error:
 	close()
-	var target := ip.strip_edges()
+	var target := normalize_ip(ip)
 	if not target.is_valid_ip_address():
 		_fail("نشانی IP معتبر نیست یا اتصال آغاز نشد. کد: " + str(ERR_INVALID_PARAMETER))
 		return ERR_INVALID_PARAMETER
@@ -221,6 +344,8 @@ func _on_connected_to_server() -> void:
 	if state == State.CONNECTING:
 		if _connect_timer != null:
 			_connect_timer.stop()
+			_connect_timer.queue_free()
+			_connect_timer = null
 		_set_status("به میزبان متصل شدید؛ در حال آماده‌سازی…")
 		_open_game.call_deferred()
 
@@ -250,16 +375,16 @@ func _on_server_disconnected() -> void:
 # =========================================================================================
 # LAN host discovery
 # =========================================================================================
-## The host broadcasts a small beacon once a second. Every listening device on the same
-## Wi-Fi / hotspot answers the beacon, and whoever replies becomes an entry in `hosts`.
-## UDP broadcast never leaves the local subnet, so nothing is exposed to the internet and
-## the feature keeps working on a hotspot with no uplink at all.
+## The host answers beacons and also broadcasts periodic announcements across the local
+## subnet(s). Every listening device on the same Wi-Fi / hotspot collects replies in
+## `hosts`. Using directed subnet broadcasts and the .1 hotspot gateway alongside
+## 255.255.255.255 keeps discovery working on Android hotspots and multi-homed phones.
 
 func start_discovery() -> void:
 	if _listen != null:
 		return
 	var udp := PacketPeerUDP.new()
-	var err := udp.bind(discovery_port())
+	var err := udp.bind(discovery_port(), "0.0.0.0")
 	if err != OK:
 		# A bound port is not fatal: another K2 on this device may hold it. The player can
 		# still type the address by hand, so this is surfaced as a hint, not an error dialog.
@@ -267,11 +392,12 @@ func start_discovery() -> void:
 		return
 	udp.set_broadcast_enabled(true)
 	_listen = udp
+	_listen_beacon_accum = 0.0
 	if _listen_timer == null:
 		_listen_timer = Timer.new()
 		_listen_timer.wait_time = 0.1
 		_listen_timer.autostart = true
-		_listen_timer.timeout.connect(_poll_discovery)
+		_listen_timer.timeout.connect(_on_listen_tick)
 		add_child(_listen_timer)
 	_listen_timer.start()
 	_send_beacon()
@@ -280,6 +406,8 @@ func start_discovery() -> void:
 func stop_discovery() -> void:
 	if _listen_timer != null:
 		_listen_timer.stop()
+		_listen_timer.queue_free()
+		_listen_timer = null
 	if _listen != null:
 		_listen.close()
 		_listen = null
@@ -287,11 +415,21 @@ func stop_discovery() -> void:
 	hosts_changed.emit(hosts)
 
 
+func _on_listen_tick() -> void:
+	_poll_discovery()
+	if not is_host and state == State.IDLE:
+		_listen_beacon_accum += 0.1
+		if _listen_beacon_accum >= BEACON_INTERVAL_SEC:
+			_listen_beacon_accum = 0.0
+			_send_beacon()
+	else:
+		_listen_beacon_accum = 0.0
+
+
 func _send_beacon() -> void:
 	if _listen == null:
 		return
-	_listen.set_dest_address("255.255.255.255", discovery_port())
-	_listen.put_packet(BEACON.to_utf8_buffer())
+	_send_to_targets(_listen, BEACON.to_utf8_buffer(), discovery_port(), true)
 
 
 func _poll_discovery() -> void:
@@ -299,28 +437,31 @@ func _poll_discovery() -> void:
 		return
 	var now := Time.get_ticks_msec() / 1000.0
 	var changed := false
-	var got_reply := false
 	while _listen.get_available_packet_count() > 0:
 		var pkt := _listen.get_packet()
-		var from := _listen.get_packet_ip()
+		var from := normalize_ip(_listen.get_packet_ip())
 		var txt := pkt.get_string_from_utf8()
 		var from_port: int = _listen.get_packet_port()
 		if txt == BEACON:
 			# Someone is looking for a host: answer if this device is the host. Answering
 			# unicast to the asker's OWN port keeps the reply off every other machine and
 			# stops the host's own beacon from being taken as an answer by itself.
-			if is_host and state == State.HOSTING:
+			if is_host and state == State.HOSTING and from != "":
 				_listen.set_dest_address(from, from_port)
 				_listen.put_packet((BEACON_REPLY + _session_name).to_utf8_buffer())
 		elif txt.begins_with(BEACON_REPLY):
-			if is_host and (from_port == discovery_port() or from == get_local_ip()):
+			if is_host and (from_port == discovery_port() or _is_own_ip(from)):
 				continue                       # never list ourselves
+			if from == "":
+				continue
 			var name := txt.substr(BEACON_REPLY.length())
 			var found := false
 			for h in hosts:
 				if str(h.get("ip", "")) == from:
 					h["seen_at"] = now
-					h["name"] = name
+					if str(h.get("name", "")) != name:
+						h["name"] = name
+						changed = true
 					found = true
 					break
 			if not found:
@@ -338,8 +479,12 @@ func _poll_discovery() -> void:
 		hosts_changed.emit(hosts)
 
 
-## Ask once now instead of waiting for the 100 ms poll (used by the «جست‌وجو» button).
+## Ask once now instead of waiting for the periodic poll (used by the «جست‌وجو» button).
 func refresh_hosts() -> void:
+	if _listen == null:
+		start_discovery()
+		return
+	_listen_beacon_accum = 0.0
 	_send_beacon()
 	_poll_discovery()
 
@@ -347,18 +492,46 @@ func refresh_hosts() -> void:
 func _start_advertising() -> void:
 	_stop_advertising()
 	var udp := PacketPeerUDP.new()
-	if udp.bind(discovery_port()) != OK:
-		# Advertising needs the discovery port. If it is taken the room still works with a
-		# hand-typed address, so this is not treated as a failed host.
-		return
+	if _listen != null:
+		# The lobby listener already holds discovery_port() and answers incoming beacons
+		# every 0.1 s in _poll_discovery(). Bind an ephemeral port for outgoing announcements
+		# so host_room() never collides with _listen on port 42425.
+		if udp.bind(0, "0.0.0.0") != OK:
+			return
+		_advertise_owns_port = false
+	else:
+		if udp.bind(discovery_port(), "0.0.0.0") != OK:
+			# Advertising needs the discovery port when _listen is absent. If it is taken,
+			# the room still works with a hand-typed address.
+			return
+		_advertise_owns_port = true
 	udp.set_broadcast_enabled(true)
 	_advertise = udp
+	_advertise_accum = 0.0
 	_advertise_timer = Timer.new()
-	_advertise_timer.wait_time = ADVERTISE_INTERVAL_SEC
+	_advertise_timer.wait_time = ADVERTISE_POLL_SEC
 	_advertise_timer.autostart = true
-	_advertise_timer.timeout.connect(_answer_beacons)
+	_advertise_timer.timeout.connect(_on_advertise_tick)
 	add_child(_advertise_timer)
 	_advertise_timer.start()
+	_broadcast_announcement()
+
+
+func _on_advertise_tick() -> void:
+	if _advertise == null or not is_host or state != State.HOSTING:
+		return
+	if _advertise_owns_port:
+		_answer_beacons()
+	_advertise_accum += ADVERTISE_POLL_SEC
+	if _advertise_accum >= ADVERTISE_INTERVAL_SEC:
+		_advertise_accum = 0.0
+		_broadcast_announcement()
+
+
+func _broadcast_announcement() -> void:
+	if _advertise == null or not is_host or state != State.HOSTING:
+		return
+	_send_to_targets(_advertise, (BEACON_REPLY + _session_name).to_utf8_buffer(), discovery_port(), true)
 
 
 func _answer_beacons() -> void:
@@ -366,9 +539,9 @@ func _answer_beacons() -> void:
 		return
 	while _advertise.get_available_packet_count() > 0:
 		var pkt := _advertise.get_packet()
-		var from := _advertise.get_packet_ip()
+		var from := normalize_ip(_advertise.get_packet_ip())
 		var from_port: int = _advertise.get_packet_port()
-		if pkt.get_string_from_utf8() == BEACON:
+		if pkt.get_string_from_utf8() == BEACON and from != "":
 			_advertise.set_dest_address(from, from_port)
 			_advertise.put_packet((BEACON_REPLY + _session_name).to_utf8_buffer())
 
@@ -381,3 +554,5 @@ func _stop_advertising() -> void:
 	if _advertise != null:
 		_advertise.close()
 		_advertise = null
+	_advertise_owns_port = false
+	_advertise_accum = 0.0
