@@ -113,6 +113,17 @@ Kilometer 2/
 
 Full details: `documentation/ARCHITECTURE.md`. Cleanup provenance: `documentation/CLEANUP_REPORT.md`. Testing evidence: `documentation/TESTING.md`.
 
+## Repository meta
+
+| Item | Value |
+|---|---|
+| Source version | `v0.2-b6-clean-road` (Android versionCode 12) |
+| Engine | Godot **4.7.2-stable**, GL Compatibility, Jolt 60 Hz |
+| Language of code | English (GDScript) · UI strings Persian (RTL) |
+| **AI agents: start here** | **[`AGENTS.md`](AGENTS.md)** — repo map, run/test commands, mandatory conventions, asset-licence rules |
+| Docs index | `documentation/ARCHITECTURE.md` → `DEVELOPMENT.md` → `DESIGN_SYSTEM.md` / `UX_ARCHITECTURE.md` → `TESTING.md` |
+| Tests | `bash qa/run_tests.sh` (17 headless suites; 881+ checks, 0 failures expected) |
+
 ## License
 
 Source code and procedural content: MIT (see `LICENSES.md`). Vehicle models and font carry their own terms — read `LICENSES.md` before any commercial publication.
