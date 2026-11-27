@@ -2,12 +2,13 @@
 
 ## 1. Overall architecture
 
-Kilometer 2 is a single-player 3D driving game with a strictly linear flow:
+Kilometer 2 is a 3D driving game for desktop and Android with a clean linear flow (solo or 2-player local Wi-Fi / hotspot LAN):
 
 ```
-Main Menu (3D showroom)  →  Driving scene (track + 1 vehicle + HUD)
-        ↑                            │
-        └──────── pause → main menu ─┘
+Main Menu (3D showroom)  ──►  Driving scene (track + 1 vehicle + HUD)
+        ▲       │                            │
+        │       └─► LAN lobby ─► LAN game ───┘
+        └─────────────────────── pause → main menu
 ```
 
 Design invariants (enforced by tests, do not break them):
@@ -22,18 +23,19 @@ Design invariants (enforced by tests, do not break them):
 | Path | Contents |
 |---|---|
 | `project.godot` | Engine config: main scene, input actions, GL Compatibility, Jolt, 60 Hz physics |
-| `export_presets.cfg` | Android preset (APK `Kilometer_2.apk`, v4.0.0); excludes `tests/`, `tools/`, `reports/` |
+| `export_presets.cfg` | Android preset (`k2-v0.3-b1-android-lan-arm64.apk`, `v0.3-b1-android-lan` / code 13); excludes `tests/`, `tools/`, `qa/`, `reports/` |
 | `scenes/main/` | `main_driving_template.tscn` — the playable scene (5 root nodes; content code-driven) |
-| `scenes/ui/` | `main_menu.tscn`, `settings_panel.tscn`, `vehicle_hud.tscn` (thin scenes: root node + script) |
+| `scenes/multiplayer/` | `lan_lobby.tscn`, `lan_game.tscn` — 2-player local Wi-Fi / hotspot LAN lobby and driving scene |
+| `scenes/ui/` | `main_menu.tscn`, `settings_panel.tscn`, `vehicle_hud.tscn`, `loading_screen.tscn` (thin scenes: root node + script) |
 | `scenes/vehicle/` | 18 scenes: for each of 6 cars `*_vehicle.tscn` (physics rig), `*_visual.tscn` (body rig), `*_showcase.tscn` (body + 4 wheel meshes for the showroom) |
 | `scenes/camera/` | `vehicle_camera_rig.tscn` (SpringArm3D + Camera3D) |
 | `scenes/track/` | `test_track.tscn` |
 | `scenes/preview/` | `asset_integration_preview.tscn` — studio scene used by the carpack integration suite |
-| `scripts/` | Mirrors `scenes/` (`camera/ main/ preview/ track/ ui/ vehicle/`). 17 production scripts |
-| `assets/fonts/` | Vazirmatn Regular/Medium/Bold + OFL license |
+| `scripts/` | Mirrors `scenes/` (`audio/ camera/ main/ multiplayer/ preview/ track/ ui/ vehicle/`). 30 production scripts |
+| `assets/fonts/` | Estedad + Changa (used), Vazirmatn (kept, unused) + OFL licenses |
 | `assets/vehicle/` | Sport Pride `saipa_pride_body/wheel.glb` + extracted textures |
 | `assets/vehicle/carpack/veh_01…05/` | Per-vehicle `*_body.glb`, `*_wheel.glb`, extracted textures |
-| `tests/` | 17 headless SceneTree suites, 842 checks |
+| `tests/` | 20 headless SceneTree suites, 900+ checks |
 | `tools/` | `capture_previews.gd` — screenshot tool (dev-only, export-excluded) |
 | `reports/` | `screenshots/` (16 review images), `physics_metrics.json`, `integration_metrics.json` (test outputs) |
 
@@ -52,7 +54,8 @@ Scenes are intentionally thin: node structure that must be tuned visually lives 
 | Visual model | `scripts/vehicle/saipa_visual_model.gd` | Body hierarchy, paint, headlights/brake lights, cockpit wheel/gauge needles, LOD tier application, runtime static batching |
 | Vehicle catalog | `scripts/vehicle/vehicle_catalog.gd` | Single registry of the 6 vehicles: scene paths, mass, wheelbase, wheel radius, FA/EN names, paint |
 | Camera | `scripts/camera/vehicle_camera_rig.gd` | Single free-follow: smoothed pivot + yaw, physics-tick update after the vehicle (`process_physics_priority = 10`), SpringArm3D collision, FOV from settings, diagnostics for tests/HUD |
-| Track | `scripts/track/engineered_test_track.gd` | Procedural proving ground: zones, grip areas (`surface_grip` metadata), spawn transform, MultiMesh scenery, per-tier shadow quality |
+| Track | `scripts/track/desert_circuit.gd` | Commissioned desert circuit: surveyed collision plan, kerbs, start-gantry countdown, 12 checkpoints, lap timing, off-track/wrong-way telemetry, per-tier shadows |
+| LAN multiplayer | `scripts/multiplayer/lan_session.gd`, `lan_lobby.gd`, `lan_game.gd` | Autoload `LanSession` (ENet + UDP host discovery with subnet/gateway probes), lobby UI, 30 Hz kinematic replica sync |
 | Input | `scripts/vehicle/vehicle_input_map.gd` | Idempotent runtime guarantee of the 7 InputMap actions (also persisted in `project.godot`) |
 
 ## 5. UI systems (v0.1-b3 "Proving Ground")

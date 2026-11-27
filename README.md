@@ -1,8 +1,8 @@
 # Kilometer 2
 
-**Kilometer 2** is a Persian (RTL) 3D driving game built with **Godot 4.7** for desktop and Android. The player picks one of six Iranian-market cars in a live 3D showroom, then drives it on a 973 m desert circuit with Jolt vehicle physics, lap timing and sector checkpoints, a single smooth free-follow camera, and a unified dark-sport UI.
+**Kilometer 2** is a Persian (RTL) 3D driving game built with **Godot 4.7** for desktop and Android. The player picks one of six Iranian-market cars in a live 3D showroom, then drives it solo or with a friend over local Wi-Fi / Android hotspot (LAN multiplayer) on a desert circuit with Jolt vehicle physics, lap timing and sector checkpoints, a single smooth free-follow camera, and a unified dark-sport UI.
 
-This repository is the cleaned, audited, fully documented production source (version **v0.2-b1**: the desert circuit map replacing the procedural proving ground, plus the identity-v2 loading screen). It is the single authoritative source of the project.
+This repository is the cleaned, audited, fully documented production source (version **v0.3-b1-android-lan**: Android LAN multiplayer discovery, hotspot routing, and state-sync fixes on top of the desert circuit map, clean-road visuals, and identity-v2 loading screen). It is the single authoritative source of the project.
 
 ## Overview
 
@@ -18,13 +18,14 @@ This repository is the cleaned, audited, fully documented production source (ver
 - **One settings system.** One shared settings panel (menu + pause) backed by a static ConfigFile store. Graphics tier is owned by settings alone and is applied at scene start or on explicit user change — never as a side effect of spawning/switching anything.
 - **Six vehicles.** Sport Pride (baseline default), IKCO Tara, Renault Megan, Saipa Pride 132, Saipa Quick, IKCO Samand EF7 — each with real measured mass, wheelbase and wheel radius.
 - **Persian RTL UI — "Proving Ground" design system.** One token-driven theme (`UiTheme`), Estedad typography, explicit RTL paragraphs, Persian digits in prose and Latin digits in instruments, focus-trapped overlays, device-aware prompts (keyboard / gamepad / touch), UI scale 85–150 % and reduced motion. Android multi-touch controls (buttons / rotary wheel / analog bar), keyboard and gamepad support. See `documentation/DESIGN_SYSTEM.md` and `documentation/UX_ARCHITECTURE.md`.
-- **Desert circuit.** A 973 m figure-eight desert track (commissioned GLB, optimised to 56.8k triangles) with surveyed collision, 12 sector checkpoints, start-lights countdown and lap timing.
+- **Desert circuit.** A figure-eight desert track (commissioned GLB, optimised for mobile) with surveyed collision, 12 sector checkpoints, start-lights countdown and lap timing.
+- **Local LAN multiplayer (v0.3).** Two-device play over local Wi-Fi or Android mobile hotspot without internet: automatic UDP host discovery (directed subnet broadcast + hotspot `.1` gateway probe + periodic beacons), manual IP entry with Persian/Arabic numeral normalization, and 30 Hz kinematic replica sync.
 
 ## Objectives
 
 1. A stable, maintainable Godot project that another experienced developer can open, understand and extend without archaeology.
-2. One authoritative implementation per system (UI, camera, settings, vehicle, input).
-3. Verified quality: seventeen headless test suites, **842 automated checks, 0 failures** (v0.1-b4).
+2. One authoritative implementation per system (UI, camera, settings, vehicle, input, LAN session).
+3. Verified quality: **20 headless test suites** (900+ automated checks, 0 failures expected when run with Godot 4.7.2).
 
 ## Godot version & requirements
 
@@ -68,7 +69,7 @@ garage diorama (CC BY-NC 4.0, not for commercial release as-is) — see `LICENSE
 
 ## Running the tests
 
-Seventeen headless SceneTree suites live in `tests/` (842 checks total; `bash qa/run_tests.sh` prints a summary):
+Twenty headless SceneTree suites live in `tests/` (`bash qa/run_tests.sh` prints a summary):
 
 ```bash
 for t in tests/test_*.gd; do godot --headless --path . --script "res://$t"; done
@@ -99,12 +100,12 @@ Kilometer 2/
 ├── README.md / CHANGELOG.md / LICENSES.md
 ├── documentation/           # ARCHITECTURE, DEVELOPMENT, CLEANUP_REPORT, DESERT_CIRCUIT,
 │                            # TESTING, ASSET_CATALOG, MAINTENANCE
-├── scenes/                  # camera/ main/ preview/ track/ ui/ vehicle/
-├── scripts/                 # mirrors scenes/ (camera/ main/ preview/ ...)
+├── scenes/                  # camera/ main/ multiplayer/ preview/ track/ ui/ vehicle/
+├── scripts/                 # mirrors scenes/ (camera/ main/ multiplayer/ preview/ ...)
 ├── assets/fonts/            # Estedad + Changa (used), Vazirmatn (kept, unused) — all OFL-1.1
 ├── assets/vehicle/          # Sport Pride GLBs + carpack/ (5 vehicles)
 ├── assets/track/            # desert circuit GLB (optimised) + surveyed centreline.json
-├── tests/                   # 18 headless suites (881 checks)
+├── tests/                   # 20 headless suites (900+ checks)
 ├── qa/                      # run_tests.sh, capture_uiux.gd, probe_focus.gd (dev-only, export-excluded)
 ├── tools/                   # capture_previews.gd, capture_map.gd, sync_version.py,
 │                            # track_survey/ (GLB optimiser + centreline survey, dev-only)
@@ -117,12 +118,12 @@ Full details: `documentation/ARCHITECTURE.md`. Cleanup provenance: `documentatio
 
 | Item | Value |
 |---|---|
-| Source version | `v0.2-b6-clean-road` (Android versionCode 12) |
+| Source version | `v0.3-b1-android-lan` (Android versionCode 13) |
 | Engine | Godot **4.7.2-stable**, GL Compatibility, Jolt 60 Hz |
 | Language of code | English (GDScript) · UI strings Persian (RTL) |
 | **AI agents: start here** | **[`AGENTS.md`](AGENTS.md)** — repo map, run/test commands, mandatory conventions, asset-licence rules |
 | Docs index | `documentation/ARCHITECTURE.md` → `DEVELOPMENT.md` → `DESIGN_SYSTEM.md` / `UX_ARCHITECTURE.md` → `TESTING.md` |
-| Tests | `bash qa/run_tests.sh` (17 headless suites; 881+ checks, 0 failures expected) |
+| Tests | `bash qa/run_tests.sh` (20 headless suites; 900+ checks, 0 failures expected) |
 
 ## License
 

@@ -190,10 +190,10 @@ func _run() -> void:
 		track.reset_lap()
 
 	# ---- 5. version ---------------------------------------------------------------
-	# v0.2-b2: the map/collision rework increments the version. CODE must only ever increase,
-	# and 7 > 6 keeps Play from rejecting the upload as a downgrade.
-	check(VersionInfo.BUILD == "v0.2-b6-clean-road" and VersionInfo.CODE == 12,
-		"version_is_v0_2_b2_racetrack_obj_code_8", VersionInfo.BUILD)
+	# v0.3-b1-android-lan: Android LAN discovery/sync fixes increment the version. CODE must
+	# only ever increase, and 13 > 12 keeps Android from rejecting the upgrade.
+	check(VersionInfo.BUILD == "v0.3-b1-android-lan" and VersionInfo.CODE == 13,
+		"version_is_v0_3_b1_android_lan", VersionInfo.BUILD)
 
 	print("=== DESERT CIRCUIT + LOADING SUMMARY: %d passed, %d failed ===" % [passed, failed])
 	quit(0 if failed == 0 else 1)

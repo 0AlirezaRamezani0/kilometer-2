@@ -436,10 +436,8 @@ func run_checks() -> void:
 	var preset := FileAccess.get_file_as_string("res://export_presets.cfg")
 	check(preset.contains("keystore/release_password=\"\"") and preset.contains("keystore/release_user=\"\""), "export_preset_has_no_keystore_secret")
 	check(preset.contains("qa/*"), "export_excludes_qa_tools")
-	# v0.2-b2: the build string legitimately moved again with the map/collision rework. The
-	# assertion keeps its original purpose — the version lives in one place and only ever goes
-	# forward — while naming the current build.
-	check(VersionInfo.BUILD == "v0.2-b6-clean-road" and VersionInfo.CODE >= 12, "version_is_v0_2_b6_clean_road")
+	# v0.3-b1-android-lan: the version lives in one place and only ever goes forward.
+	check(VersionInfo.BUILD == "v0.3-b1-android-lan" and VersionInfo.CODE >= 13, "version_is_v0_3_b1_android_lan")
 	check(root.get_node_or_null("SceneTransition") != null, "scene_transition_autoload_present")
 
 	SettingsManager.reduce_motion = saved_motion

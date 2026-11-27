@@ -16,7 +16,7 @@
 | رندرر | `gl_compatibility` (دسکتاپ + اندروید) |
 | فیزیک | **Jolt**, 60 tick/s |
 | زبان | فقط **GDScript** (بدون .NET، بدون افزونه/پلاگین/ساب‌ماژول) |
-| نسخه فعلی سورس | `v0.2-b6-clean-road` (کد ۱۲) |
+| نسخه فعلی سورس | `v0.3-b1-android-lan` (کد ۱۳) |
 | رزولوشن مرجع | 1280×720، `canvas_items` stretch |
 | پلتفرم‌ها | دسکتاپ + اندروید (preset اکسپورت آماده) |
 
@@ -41,7 +41,7 @@ scripts/                 آینه‌ی ساختار scenes/ — هر .tscn لا�
 assets/fonts/            Estedad + Changa (OFL-1.1)  ·  assets/vehicle/  GLB خودروها
 assets/track/            GLB پیست + centreline.json (نقشه‌برداری‌شده)
 assets/environment/      دیوراما‌ی گاراژ بیابانی (garage_desert.glb)
-tests/                   ۱۷ سوییت هدلس (GDScript SceneTree)
+tests/                   ۲۰ سوییت هدلس (GDScript SceneTree)
 qa/                      run_tests.sh، اسکریپت‌های کپچر (توسعه‌ای، از اکسپورت حذف‌شده)
 tools/                   sync_version.py، بهینه‌ساز GLB، survey پیست
 ```
@@ -147,4 +147,4 @@ bash qa/run_tests.sh -k desert
 
 ---
 
-*آخرین به‌روزرسانی این راهنما: همگام با `K2_SOURCE_v0.2-b6-clean-road`.*
+*آخرین به‌روزرسانی این راهنما: همگام با `K2_SOURCE_v0.3-b1-android-lan`.*

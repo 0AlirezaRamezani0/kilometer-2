@@ -117,5 +117,31 @@ func run() -> void:
 	check((client.get("hosts") as Array).is_empty(), "stop_discovery_clears_hosts")
 
 	check(host.get("_advertise") == null, "close_stops_advertising")
+
+	# 5) real lobby flow: start_discovery() already holds the port when host_room() is called
+	var lan_script := load("res://scripts/multiplayer/lan_session.gd")
+	check(lan_script.normalize_ip(" ۱۹۲.۱۶۸.۱٫۲ ") == "192.168.1.2", "normalize_ip_handles_persian_digits")
+	OS.set_environment("K2_LAN_DISCOVERY_PORT", "42430")
+	host.start_discovery()
+	await create_timer(0.1).timeout
+	var lobby_host_err: int = host.host_room()
+	check(host.get("_listen") != null and host.get("_advertise") != null, "lobby_host_does_not_collide_with_listener",
+		"(host_room err=%d)" % lobby_host_err)
+	var probe2 := PacketPeerUDP.new()
+	if probe2.bind(0, "127.0.0.1") == OK:
+		probe2.set_dest_address("127.0.0.1", 42430)
+		probe2.put_packet("K2LAN1?".to_utf8_buffer())
+		var reply2 := ""
+		for i in 15:
+			await create_timer(0.1).timeout
+			while probe2.get_available_packet_count() > 0:
+				reply2 = probe2.get_packet().get_string_from_utf8()
+			if reply2 != "":
+				break
+		check(reply2.begins_with("K2LAN1!"), "lobby_host_still_answers_beacons", "(reply='%s')" % reply2)
+		probe2.close()
+	host.close()
+	host.stop_discovery()
+
 	client.queue_free()
 	host.queue_free()
