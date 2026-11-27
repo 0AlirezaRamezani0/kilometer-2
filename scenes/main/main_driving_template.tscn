@@ -1,0 +1,20 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/main/main_driving_template.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/track/test_track.tscn" id="2_track"]
+[ext_resource type="PackedScene" path="res://scenes/vehicle/saipa_pride_vehicle.tscn" id="3_car"]
+[ext_resource type="PackedScene" path="res://scenes/camera/vehicle_camera_rig.tscn" id="4_cam"]
+[ext_resource type="PackedScene" path="res://scenes/ui/vehicle_hud.tscn" id="5_hud"]
+
+[node name="MainDrivingTemplate" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="EngineeredTestTrack" parent="." instance=ExtResource("2_track")]
+
+[node name="SaipaPrideVehicle" parent="." instance=ExtResource("3_car")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 0)
+
+[node name="VehicleCameraRig" parent="." instance=ExtResource("4_cam")]
+target_vehicle_path = NodePath("../SaipaPrideVehicle")
+
+[node name="VehicleHud" parent="." instance=ExtResource("5_hud")]

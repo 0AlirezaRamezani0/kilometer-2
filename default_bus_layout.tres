@@ -1,0 +1,60 @@
+[gd_resource type="AudioBusLayout" format=3 uid="uid://dhqby23t6kvyy"]
+
+[sub_resource type="AudioEffectHardLimiter" id="AudioEffectHardLimiter_master"]
+resource_name = "HardLimiter"
+ceiling_db = -0.8
+
+[sub_resource type="AudioEffectLowPassFilter" id="AudioEffectLowPassFilter_music"]
+resource_name = "PauseMuffleLPF"
+cutoff_hz = 20500.0
+resonance = 0.55
+
+[sub_resource type="AudioEffectCompressor" id="AudioEffectCompressor_vehicle"]
+resource_name = "VehicleGlueComp"
+threshold = -14.0
+ratio = 2.6
+attack_us = 1800.0
+release_ms = 140.0
+
+[sub_resource type="AudioEffectEQ6" id="AudioEffectEQ6_vehicle"]
+resource_name = "VehicleWarmEQ"
+band_db/32_hz = 1.5
+band_db/100_hz = 2.0
+band_db/320_hz = -1.0
+band_db/1000_hz = -1.5
+band_db/3200_hz = 0.5
+band_db/10000_hz = -1.0
+
+[resource]
+bus/0/effect/0/effect = SubResource("AudioEffectHardLimiter_master")
+bus/0/effect/0/enabled = true
+bus/1/name = &"Music"
+bus/1/solo = false
+bus/1/mute = false
+bus/1/bypass_fx = false
+bus/1/volume_db = -2.0
+bus/1/send = &"Master"
+bus/1/effect/0/effect = SubResource("AudioEffectLowPassFilter_music")
+bus/1/effect/0/enabled = true
+bus/2/name = &"Vehicle"
+bus/2/solo = false
+bus/2/mute = false
+bus/2/bypass_fx = false
+bus/2/volume_db = 0.0
+bus/2/send = &"Master"
+bus/2/effect/0/effect = SubResource("AudioEffectCompressor_vehicle")
+bus/2/effect/0/enabled = true
+bus/2/effect/1/effect = SubResource("AudioEffectEQ6_vehicle")
+bus/2/effect/1/enabled = true
+bus/3/name = &"SFX"
+bus/3/solo = false
+bus/3/mute = false
+bus/3/bypass_fx = false
+bus/3/volume_db = 0.0
+bus/3/send = &"Master"
+bus/4/name = &"UI"
+bus/4/solo = false
+bus/4/mute = false
+bus/4/bypass_fx = false
+bus/4/volume_db = -1.0
+bus/4/send = &"Master"

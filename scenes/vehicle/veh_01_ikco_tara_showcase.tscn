@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicle/veh_01_ikco_tara_visual.tscn" id="1_bodyvis"]
+[ext_resource type="PackedScene" path="res://assets/vehicle/carpack/veh_01_ikco_tara/veh_01_ikco_tara_wheel.glb" id="2_wheelglb"]
+
+[node name="IkcoTaraShowcase" type="Node3D"]
+
+[node name="IkcoTaraVisual" parent="." instance=ExtResource("1_bodyvis")]
+
+[node name="WheelMountFL" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.82616, 0.3364, 1.51518)
+
+[node name="WheelMesh" parent="WheelMountFL" instance=ExtResource("2_wheelglb")]
+
+[node name="WheelMountFR" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.82522, 0.3364, 1.51518)
+
+[node name="WheelMesh" parent="WheelMountFR" instance=ExtResource("2_wheelglb")]
+
+[node name="WheelMountRL" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.82618, 0.3364, -1.38791)
+
+[node name="WheelMesh" parent="WheelMountRL" instance=ExtResource("2_wheelglb")]
+
+[node name="WheelMountRR" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8248, 0.3364, -1.38791)
+
+[node name="WheelMesh" parent="WheelMountRR" instance=ExtResource("2_wheelglb")]

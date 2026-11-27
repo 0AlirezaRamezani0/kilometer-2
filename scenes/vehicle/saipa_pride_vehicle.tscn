@@ -1,0 +1,103 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle/saipa_vehicle_controller.gd" id="1_ctrl"]
+[ext_resource type="PackedScene" path="res://scenes/vehicle/saipa_pride_visual.tscn" id="2_vis"]
+[ext_resource type="PackedScene" path="res://assets/vehicle/saipa_pride_wheel.glb" id="3_wheel"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lower"]
+size = Vector3(1.76, 0.56, 4.38)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cabin"]
+size = Vector3(1.52, 0.54, 2.18)
+
+[node name="SaipaPrideVehicle" type="VehicleBody3D"]
+mass = 950.0
+center_of_mass_mode = 1
+center_of_mass = Vector3(0, 0.2, 0.08)
+continuous_cd = true
+can_sleep = false
+script = ExtResource("1_ctrl")
+
+[node name="CollisionLowerHull" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.56, 0.04)
+shape = SubResource("BoxShape3D_lower")
+
+[node name="CollisionUpperCabin" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.11, -0.14)
+shape = SubResource("BoxShape3D_cabin")
+
+[node name="WheelFL" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.88553, 0.3505, 1.43838)
+use_as_traction = true
+use_as_steering = true
+wheel_roll_influence = 0.03
+wheel_radius = 0.3032
+wheel_rest_length = 0.12
+wheel_friction_slip = 1.92
+suspension_travel = 0.16
+suspension_stiffness = 58.0
+suspension_max_force = 12000.0
+damping_compression = 2.8
+damping_relaxation = 3.6
+
+[node name="WheelFR" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.88987, 0.3505, 1.43838)
+use_as_traction = true
+use_as_steering = true
+wheel_roll_influence = 0.03
+wheel_radius = 0.3032
+wheel_rest_length = 0.12
+wheel_friction_slip = 1.92
+suspension_travel = 0.16
+suspension_stiffness = 58.0
+suspension_max_force = 12000.0
+damping_compression = 2.8
+damping_relaxation = 3.6
+
+[node name="WheelRL" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.90235, 0.3505, -1.23092)
+wheel_roll_influence = 0.03
+wheel_radius = 0.3032
+wheel_rest_length = 0.12
+wheel_friction_slip = 1.98
+suspension_travel = 0.16
+suspension_stiffness = 58.0
+suspension_max_force = 12000.0
+damping_compression = 2.8
+damping_relaxation = 3.6
+
+[node name="WheelRR" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.90235, 0.3505, -1.23092)
+wheel_roll_influence = 0.03
+wheel_radius = 0.3032
+wheel_rest_length = 0.12
+wheel_friction_slip = 1.98
+suspension_travel = 0.16
+suspension_stiffness = 58.0
+suspension_max_force = 12000.0
+damping_compression = 2.8
+damping_relaxation = 3.6
+
+[node name="SaipaPrideVisual" parent="." instance=ExtResource("2_vis")]
+
+[node name="VisualWheels" type="Node3D" parent="."]
+
+[node name="VisWheelFL" type="Node3D" parent="VisualWheels"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.88553, 0.30317, 1.43838)
+
+[node name="WheelMesh" parent="VisualWheels/VisWheelFL" instance=ExtResource("3_wheel")]
+
+[node name="VisWheelFR" type="Node3D" parent="VisualWheels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.88987, 0.30317, 1.43838)
+
+[node name="WheelMesh" parent="VisualWheels/VisWheelFR" instance=ExtResource("3_wheel")]
+
+[node name="VisWheelRL" type="Node3D" parent="VisualWheels"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.90235, 0.30317, -1.23092)
+
+[node name="WheelMesh" parent="VisualWheels/VisWheelRL" instance=ExtResource("3_wheel")]
+
+[node name="VisWheelRR" type="Node3D" parent="VisualWheels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.90235, 0.30317, -1.23092)
+
+[node name="WheelMesh" parent="VisualWheels/VisWheelRR" instance=ExtResource("3_wheel")]

@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle/saipa_visual_model.gd" id="1_visscript"]
+[ext_resource type="PackedScene" path="res://assets/vehicle/carpack/veh_01_ikco_tara/veh_01_ikco_tara_body.glb" id="2_bodyglb"]
+
+[node name="IkcoTaraVisual" type="Node3D"]
+script = ExtResource("1_visscript")
+headlight_pos_fl = Vector3(0.6453, 0.65, 2.2196)
+body_paint_color = Color(0.95, 0.95, 0.97, 1)
+
+[node name="BodyRig" parent="." instance=ExtResource("2_bodyglb")]

@@ -1,0 +1,15 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/multiplayer/lan_game.gd" id="1_game"]
+[ext_resource type="PackedScene" path="res://scenes/track/test_track.tscn" id="2_track"]
+[ext_resource type="PackedScene" path="res://scenes/camera/vehicle_camera_rig.tscn" id="3_cam"]
+[ext_resource type="PackedScene" path="res://scenes/ui/vehicle_hud.tscn" id="4_hud"]
+
+[node name="LanGame" type="Node3D"]
+script = ExtResource("1_game")
+
+[node name="EngineeredTestTrack" parent="." instance=ExtResource("2_track")]
+
+[node name="VehicleCameraRig" parent="." instance=ExtResource("3_cam")]
+
+[node name="VehicleHud" parent="." instance=ExtResource("4_hud")]

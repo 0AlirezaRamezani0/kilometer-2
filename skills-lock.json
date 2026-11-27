@@ -1,0 +1,100 @@
+{
+  "version": 2,
+  "skills": {
+    "code-review-and-quality": {
+      "source": "addyosmani/agent-skills",
+      "commit": "e997ac5b9a74eab332d5e9793bb38a38c8cfdd74",
+      "sourceType": "github",
+      "skillPath": "skills/code-review-and-quality/SKILL.md",
+      "computedHash": "c04b5cb0f38ea3aec41b0219478124a9b38d467c3cecd82cdf0ad694d9403628"
+    },
+    "debugging-and-error-recovery": {
+      "source": "addyosmani/agent-skills",
+      "commit": "e997ac5b9a74eab332d5e9793bb38a38c8cfdd74",
+      "sourceType": "github",
+      "skillPath": "skills/debugging-and-error-recovery/SKILL.md",
+      "computedHash": "aa26ffd65f2e2759c66806c4a3111c6fbaad612c5f39799bd3bc6cd942abd0fc"
+    },
+    "documentation-and-adrs": {
+      "source": "addyosmani/agent-skills",
+      "commit": "e997ac5b9a74eab332d5e9793bb38a38c8cfdd74",
+      "sourceType": "github",
+      "skillPath": "skills/documentation-and-adrs/SKILL.md",
+      "computedHash": "deb39d7c8157563bc14a48f0d22003c82f4d8370b69c96efde476fe12318d188"
+    },
+    "doubt-driven-development": {
+      "source": "addyosmani/agent-skills",
+      "commit": "e997ac5b9a74eab332d5e9793bb38a38c8cfdd74",
+      "sourceType": "github",
+      "skillPath": "skills/doubt-driven-development/SKILL.md",
+      "computedHash": "3369c97f3c95f4bec25a956d54b86b19241e2dcf93b8f1c83bdc5bd2c07351b6"
+    },
+    "game-ui-ux": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "commit": "c6ca6c41c839b68319ffc08430b99ab768debc32",
+      "sourceType": "github",
+      "skillPath": "skills/disciplines/game-ui-ux/SKILL.md",
+      "computedHash": "8bf85f22ef57c78fd2a5b14c086e6cb4a1a0f6b729111abeed29be96cf615610",
+      "installMode": "copy"
+    },
+    "godot-best-practice": {
+      "source": "gigio1023/godot-best-practice",
+      "commit": "46c49acac594274d92c5605af27df98e763fb238",
+      "sourceType": "github",
+      "skillPath": "skills/godot-best-practice/SKILL.md",
+      "computedHash": "d0b2b21224a3f0689642079993215f79ff2d330a64538acfee5d126a353de9e6"
+    },
+    "godot-ui-control": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "commit": "c6ca6c41c839b68319ffc08430b99ab768debc32",
+      "sourceType": "github",
+      "skillPath": "skills/godot/godot-ui-control/SKILL.md",
+      "computedHash": "7bc39fe9a56fc1daa68fb2c343766b79f08d96e33301e8669439451c711146da",
+      "installMode": "copy"
+    },
+    "incremental-implementation": {
+      "source": "addyosmani/agent-skills",
+      "commit": "e997ac5b9a74eab332d5e9793bb38a38c8cfdd74",
+      "sourceType": "github",
+      "skillPath": "skills/incremental-implementation/SKILL.md",
+      "computedHash": "0d61dbaaa3a1222ea1cd7b497f65694c793b256b7f82d227b856cde25057ebfa"
+    },
+    "input-systems": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "commit": "c6ca6c41c839b68319ffc08430b99ab768debc32",
+      "sourceType": "github",
+      "skillPath": "skills/disciplines/input-systems/SKILL.md",
+      "computedHash": "c155987a41e88c82d0126dbf0959114cae1e0892695777aa58501f31fd363090",
+      "installMode": "copy"
+    },
+    "material-3": {
+      "source": "hamen/material-3-skill",
+      "commit": "14385f2bf3804d8779f8b4db2604211f1e70b4c1",
+      "sourceType": "github",
+      "skillPath": "skills/material-3/SKILL.md",
+      "computedHash": "eb072deb6fb42a9e3ce1853ffd8420adb99dfbe1d6327bc22c5ad47edb77f56c",
+      "installMode": "copy"
+    },
+    "performance-optimization": {
+      "source": "addyosmani/agent-skills",
+      "commit": "e997ac5b9a74eab332d5e9793bb38a38c8cfdd74",
+      "sourceType": "github",
+      "skillPath": "skills/performance-optimization/SKILL.md",
+      "computedHash": "5408f84feeed8c4e5abf5ee6b557e6d4e22a838c95e9d98bf64f49f4d1d16c7e"
+    },
+    "test-driven-development": {
+      "source": "addyosmani/agent-skills",
+      "commit": "e997ac5b9a74eab332d5e9793bb38a38c8cfdd74",
+      "sourceType": "github",
+      "skillPath": "skills/test-driven-development/SKILL.md",
+      "computedHash": "521e792df0e2def3e38141e5336fe642e1f3bda1991a4b8e7b7be131d9e4a113"
+    },
+    "using-agent-skills": {
+      "source": "addyosmani/agent-skills",
+      "commit": "e997ac5b9a74eab332d5e9793bb38a38c8cfdd74",
+      "sourceType": "github",
+      "skillPath": "skills/using-agent-skills/SKILL.md",
+      "computedHash": "741fa4facdd7970231184d621f4c5eaa5c52dedc3cf53e87b25f9daf4873d2cc"
+    }
+  }
+}
