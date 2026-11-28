@@ -30,6 +30,7 @@ var _remote_steer_vis: float = 0.0
 var _last_sync_msec: int = 0
 var _outlier_count: int = 0
 var _outlier_origin := Vector3.ZERO
+var _partner_acked := false
 var _own_idx := 0
 var _tick := 0
 
@@ -100,19 +101,30 @@ func _spawn_car(idx: int, slot: int, is_local: bool) -> SaipaVehicleController:
 	return car
 
 
-## K2-DEEP-005 basic hardening: the session has exactly one partner
-## (MAX_CLIENTS = 1). RPCs from anyone else, malformed vehicle indices
+## K2-DEEP-005 basic hardening: the session has one active partner
+## per match. RPCs from anyone else, malformed vehicle indices
 ## and non-finite / out-of-world / teleporting sync states are dropped.
 func _is_partner(sender: int) -> bool:
 	return sender != multiplayer.get_unique_id() and multiplayer.get_peers().has(sender)
 
 
 @rpc("any_peer", "call_remote", "reliable")
+func _ack_vehicle() -> void:
+	if _is_partner(multiplayer.get_remote_sender_id()):
+		_partner_acked = true
+
+
+@rpc("any_peer", "call_remote", "reliable")
 func _announce_vehicle(idx: int) -> void:
 	var sender := multiplayer.get_remote_sender_id()
-	if _remote_car != null or not _is_partner(sender):
+	if not _is_partner(sender):
 		return
 	if idx < 0 or idx >= VehicleCatalog.get_count():
+		return
+	# Always acknowledge so a slower-loading peer that missed our initial
+	# announcements still learns we spawned its car and stops re-announcing.
+	rpc_id(sender, "_ack_vehicle")
+	if _remote_car != null:
 		return
 	var remote_slot := 0 if sender == 1 else 1
 	_remote_slot_tf = _slot_transform(remote_slot)
@@ -129,7 +141,8 @@ func _announce_vehicle(idx: int) -> void:
 func _sync_state(tf: Transform3D) -> void:
 	if not _is_partner(multiplayer.get_remote_sender_id()):
 		return
-	var o := tf.origin
+	var clean_tf := tf.orthonormalized()
+	var o := clean_tf.origin
 	if not (is_finite(o.x) and is_finite(o.y) and is_finite(o.z)):
 		return
 	if absf(o.x) > 620.0 or absf(o.z) > 720.0 or o.y < -5.0 or o.y > 80.0:
@@ -149,7 +162,7 @@ func _sync_state(tf: Transform3D) -> void:
 				return
 	_outlier_count = 0
 	_last_sync_msec = now_msec
-	_remote_target = tf
+	_remote_target = clean_tf
 	_remote_has_state = true
 
 
@@ -178,17 +191,15 @@ func _physics_process(_delta: float) -> void:
 		_track.update_telemetry(_local_car)
 	if not _session_active() or _local_car == null:
 		return
-	if _remote_car == null:
-		if _tick % 15 == 0:
-			rpc("_announce_vehicle", _own_idx)
-		return
+	if not _partner_acked and _tick % 15 == 0:
+		rpc("_announce_vehicle", _own_idx)
 	if _tick % 2 == 0:
-		rpc("_sync_state", _local_car.global_transform)
+		rpc("_sync_state", _local_car.global_transform.orthonormalized())
 
 
 func _process(delta: float) -> void:
 	if _remote_car != null and _remote_has_state:
-		var cur := _remote_car.global_transform
+		var cur := _remote_car.global_transform.orthonormalized()
 		var next_tf: Transform3D
 		var snapped := false
 		if cur.origin.distance_to(_remote_target.origin) > 8.0:

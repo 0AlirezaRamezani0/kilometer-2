@@ -31,8 +31,10 @@ const BEACON_INTERVAL_SEC := 1.5
 const DISCOVERY_TIMEOUT_SEC := 2.0
 ## A host that stopped advertising is dropped from the list after this long.
 const HOST_TTL_SEC := 4.0
-const MAX_CLIENTS := 1
-const CONNECT_TIMEOUT_SEC := 8.0
+const MAX_CLIENTS := 4
+const CONNECT_TIMEOUT_SEC := 12.0
+const SWEEP_BATCH_SIZE := 32
+const SWEEP_RETRY_SEC := 6.0
 const LOBBY_SCENE := "res://scenes/multiplayer/lan_lobby.tscn"
 const GAME_SCENE := "res://scenes/multiplayer/lan_game.tscn"
 const MENU_SCENE := "res://scenes/ui/main_menu.tscn"
@@ -63,6 +65,10 @@ var _advertise_accum := 0.0
 var _listen_timer: Timer = null
 var _listen_beacon_accum := 0.0
 var _session_name := "K2"
+var _partner_peer_id := 0
+var _sweep_ips: PackedStringArray = PackedStringArray()
+var _sweep_idx := 0
+var _sweep_retry_accum := 0.0
 
 
 func is_in_game() -> bool:
@@ -138,7 +144,9 @@ static func _is_private_lan_ipv4(ip: String) -> int:
 
 static func _interface_score(iface_name: String) -> int:
 	var n := iface_name.to_lower()
-	for bad in ["lo", "rmnet", "ccmni", "pdp", "wwan", "clat", "v4-", "tun", "tap", "ppp", "wg", "ipsec", "sit", "dummy", "docker", "veth", "virbr"]:
+	if n == "lo" or n == "lo0" or n.contains("loopback") or n == "sit0" or n.begins_with("sit"):
+		return -1
+	for bad in ["rmnet", "ccmni", "pdp", "wwan", "clat", "v4-", "tun", "tap", "ppp", "wg", "ipsec", "dummy", "docker", "veth", "virbr"]:
 		if n.begins_with(bad) or n.contains(bad):
 			return -1
 	for good in ["ap", "swlan", "softap", "wlan", "wifi", "eth", "en"]:
@@ -209,7 +217,20 @@ func _is_own_ip(ip: String) -> bool:
 func _discovery_targets(include_gateway: bool) -> PackedStringArray:
 	var targets: Array[String] = ["255.255.255.255"]
 	var seen := {"255.255.255.255": true}
+	var candidate_ips: Array[String] = []
+	var seen_ip := {}
 	for ip in get_local_ips():
+		if not seen_ip.has(ip):
+			seen_ip[ip] = true
+			candidate_ips.append(ip)
+	for raw in IP.get_local_addresses():
+		var ip := normalize_ip(str(raw))
+		if ip.contains(":") or ip.begins_with("127.") or ip.begins_with("169.254."):
+			continue
+		if _is_private_lan_ipv4(ip) > 0 and not seen_ip.has(ip):
+			seen_ip[ip] = true
+			candidate_ips.append(ip)
+	for ip in candidate_ips:
 		var parts := ip.split(".")
 		if parts.size() != 4:
 			continue
@@ -224,6 +245,13 @@ func _discovery_targets(include_gateway: bool) -> PackedStringArray:
 				seen[gw] = true
 				targets.append(gw)
 	return PackedStringArray(targets)
+
+
+static func _bind_udp(udp: PacketPeerUDP, port: int) -> Error:
+	var err := udp.bind(port, "0.0.0.0")
+	if err != OK:
+		err = udp.bind(port)
+	return err
 
 
 func _send_to_targets(sock: PacketPeerUDP, payload: PackedByteArray, port: int, include_gateway: bool) -> void:
@@ -246,6 +274,7 @@ func host_room() -> Error:
 	else:
 		transport = "enet"
 		var en := ENetMultiplayerPeer.new()
+		en.set_bind_ip("0.0.0.0")
 		err = en.create_server(PORT, MAX_CLIENTS)
 		peer = en
 	if err != OK:
@@ -254,6 +283,8 @@ func host_room() -> Error:
 	multiplayer.multiplayer_peer = peer
 	is_host = true
 	state = State.HOSTING
+	_partner_peer_id = 0
+	_stop_sweep()
 	_start_advertising()
 	_set_status("اتاق ساخته شد؛ منتظر بازیکن دوم هستیم.")
 	return OK
@@ -300,6 +331,7 @@ func cancel() -> void:
 
 func close() -> void:
 	_stop_advertising()
+	_stop_sweep()
 	if _connect_timer != null:
 		_connect_timer.stop()
 		_connect_timer.queue_free()
@@ -307,6 +339,7 @@ func close() -> void:
 	if multiplayer.multiplayer_peer != null:
 		multiplayer.multiplayer_peer.close()
 		multiplayer.multiplayer_peer = null
+	_partner_peer_id = 0
 	is_host = false
 	state = State.IDLE
 
@@ -324,6 +357,8 @@ func open_menu() -> void:
 ## only delays the first frame -- it cannot break the handshake.
 
 func _open_game() -> void:
+	_stop_advertising()
+	stop_discovery()
 	state = State.IN_GAME
 	SceneTransitionLayer.go(get_tree(), GAME_SCENE, "در حال آماده‌سازی پیست — بازی شبکه‌ای")
 
@@ -334,10 +369,16 @@ func _on_connect_timeout() -> void:
 		_fail("زمان اتصال به پایان رسید. نشانی و شبکه را بررسی کنید.")
 
 
-func _on_peer_connected(_id: int) -> void:
+func _on_peer_connected(id: int) -> void:
 	if is_host and state == State.HOSTING:
+		_partner_peer_id = id
+		if multiplayer.multiplayer_peer != null:
+			multiplayer.multiplayer_peer.refuse_new_connections = true
 		_set_status("بازیکن دوم متصل شد؛ در حال آماده‌سازی بازی…")
 		_open_game.call_deferred()
+	elif is_host and state == State.IN_GAME and _partner_peer_id != 0 and id != _partner_peer_id:
+		if multiplayer.multiplayer_peer != null:
+			multiplayer.multiplayer_peer.disconnect_peer(id)
 
 
 func _on_connected_to_server() -> void:
@@ -355,13 +396,18 @@ func _on_connection_failed() -> void:
 	_fail("اتصال برقرار نشد؛ نشانی IP و شبکه را بررسی کنید.")
 
 
-func _on_peer_disconnected(_id: int) -> void:
+func _on_peer_disconnected(id: int) -> void:
 	if state == State.IN_GAME:
+		if _partner_peer_id != 0 and id != _partner_peer_id:
+			return
 		var msg := "بازیکن دوم قطع شد. دوباره اتاق بسازید." if is_host else "ارتباط با میزبان قطع شد."
 		close()
 		_fail(msg)
 		open_lobby.call_deferred()
 	elif is_host and state == State.HOSTING:
+		_partner_peer_id = 0
+		if multiplayer.multiplayer_peer != null:
+			multiplayer.multiplayer_peer.refuse_new_connections = false
 		_set_status("اتاق ساخته شد؛ منتظر بازیکن دوم هستیم.")
 
 
@@ -384,7 +430,7 @@ func start_discovery() -> void:
 	if _listen != null:
 		return
 	var udp := PacketPeerUDP.new()
-	var err := udp.bind(discovery_port(), "0.0.0.0")
+	var err := _bind_udp(udp, discovery_port())
 	if err != OK:
 		# A bound port is not fatal: another K2 on this device may hold it. The player can
 		# still type the address by hand, so this is surfaced as a hint, not an error dialog.
@@ -393,6 +439,7 @@ func start_discovery() -> void:
 	udp.set_broadcast_enabled(true)
 	_listen = udp
 	_listen_beacon_accum = 0.0
+	_sweep_retry_accum = 0.0
 	if _listen_timer == null:
 		_listen_timer = Timer.new()
 		_listen_timer.wait_time = 0.1
@@ -401,9 +448,11 @@ func start_discovery() -> void:
 		add_child(_listen_timer)
 	_listen_timer.start()
 	_send_beacon()
+	_begin_sweep()
 
 
 func stop_discovery() -> void:
+	_stop_sweep()
 	if _listen_timer != null:
 		_listen_timer.stop()
 		_listen_timer.queue_free()
@@ -422,8 +471,65 @@ func _on_listen_tick() -> void:
 		if _listen_beacon_accum >= BEACON_INTERVAL_SEC:
 			_listen_beacon_accum = 0.0
 			_send_beacon()
+		if hosts.is_empty():
+			if _sweep_idx < _sweep_ips.size():
+				_step_sweep()
+			else:
+				_sweep_retry_accum += 0.1
+				if _sweep_retry_accum >= SWEEP_RETRY_SEC:
+					_sweep_retry_accum = 0.0
+					_begin_sweep()
+		else:
+			_stop_sweep()
 	else:
 		_listen_beacon_accum = 0.0
+		_stop_sweep()
+
+
+func _begin_sweep() -> void:
+	_stop_sweep()
+	# Skip sweep in headless/sandbox discovery tests that override the discovery port
+	# or run purely on loopback.
+	if OS.get_environment(DISCOVERY_PORT_ENV) != "" or is_host or state != State.IDLE:
+		return
+	var ips: Array[String] = []
+	var seen_prefix := {}
+	for local_ip in get_local_ips():
+		if _is_private_lan_ipv4(local_ip) <= 0:
+			continue
+		var parts := local_ip.split(".")
+		if parts.size() != 4:
+			continue
+		var prefix := "%s.%s.%s" % [parts[0], parts[1], parts[2]]
+		if seen_prefix.has(prefix):
+			continue
+		seen_prefix[prefix] = true
+		for last_octet in range(2, 255):
+			var candidate := "%s.%d" % [prefix, last_octet]
+			if candidate != local_ip:
+				ips.append(candidate)
+		if seen_prefix.size() >= 2:
+			break
+	_sweep_ips = PackedStringArray(ips)
+	_sweep_idx = 0
+
+
+func _step_sweep() -> void:
+	if _listen == null or _sweep_idx >= _sweep_ips.size():
+		return
+	var payload := BEACON.to_utf8_buffer()
+	var port := discovery_port()
+	var limit := mini(_sweep_idx + SWEEP_BATCH_SIZE, _sweep_ips.size())
+	while _sweep_idx < limit:
+		_listen.set_dest_address(_sweep_ips[_sweep_idx], port)
+		_listen.put_packet(payload)
+		_sweep_idx += 1
+
+
+func _stop_sweep() -> void:
+	_sweep_ips = PackedStringArray()
+	_sweep_idx = 0
+	_sweep_retry_accum = 0.0
 
 
 func _send_beacon() -> void:
@@ -486,6 +592,7 @@ func refresh_hosts() -> void:
 		return
 	_listen_beacon_accum = 0.0
 	_send_beacon()
+	_begin_sweep()
 	_poll_discovery()
 
 
@@ -496,11 +603,11 @@ func _start_advertising() -> void:
 		# The lobby listener already holds discovery_port() and answers incoming beacons
 		# every 0.1 s in _poll_discovery(). Bind an ephemeral port for outgoing announcements
 		# so host_room() never collides with _listen on port 42425.
-		if udp.bind(0, "0.0.0.0") != OK:
+		if _bind_udp(udp, 0) != OK:
 			return
 		_advertise_owns_port = false
 	else:
-		if udp.bind(discovery_port(), "0.0.0.0") != OK:
+		if _bind_udp(udp, discovery_port()) != OK:
 			# Advertising needs the discovery port when _listen is absent. If it is taken,
 			# the room still works with a hand-typed address.
 			return

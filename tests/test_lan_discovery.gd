@@ -121,6 +121,7 @@ func run() -> void:
 	# 5) real lobby flow: start_discovery() already holds the port when host_room() is called
 	var lan_script := load("res://scripts/multiplayer/lan_session.gd")
 	check(lan_script.normalize_ip(" ۱۹۲.۱۶۸.۱٫۲ ") == "192.168.1.2", "normalize_ip_handles_persian_digits")
+	check(lan_script._interface_score("lo") < 0 and lan_script._interface_score("wlan_local") > 0, "interface_score_avoids_lo_substring_false_positive")
 	OS.set_environment("K2_LAN_DISCOVERY_PORT", "42430")
 	host.start_discovery()
 	await create_timer(0.1).timeout

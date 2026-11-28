@@ -2,25 +2,7 @@
 
 **Kilometer 2** is a Persian (RTL) 3D driving game built with **Godot 4.7** for desktop and Android. The player picks one of six Iranian-market cars in a live 3D showroom, then drives it solo or with a friend over local Wi-Fi / Android hotspot (LAN multiplayer) on a desert circuit with Jolt vehicle physics, lap timing and sector checkpoints, a single smooth free-follow camera, and a unified dark-sport UI.
 
-This repository is the cleaned, audited, fully documented production source (version **v0.3-b1-android-lan**: Android LAN multiplayer discovery, hotspot routing, and state-sync fixes on top of the desert circuit map, clean-road visuals, and identity-v2 loading screen). It is the single authoritative source of the project.
-
-## Gallery
-
-<p align="center">
-  <img src="docs/gallery/brand/01-app-icon-512.png" width="130" alt="Kilometer 2 icon">
-  <img src="docs/gallery/brand/06-kilometer-logotype.png" width="330" alt="KILOMETER">
-</p>
-
-| | |
-|---|---|
-| <img src="docs/gallery/showroom/12-plate-sport-pride.png" width="420"> | <img src="docs/gallery/showroom/11-plate-track-map.png" width="420"> |
-| Sport Pride — default vehicle | The 973 m desert circuit |
-| <img src="docs/gallery/showroom/14-plate-ikco-tara.png" width="420"> | <img src="docs/gallery/showroom/15-plate-renault-megan.png" width="420"> |
-| IKCO Tara | Renault Megan |
-
-Full set (K2 mark, boot splash, adaptive + launcher icons, all six cars, portrait variants):
-**[`docs/gallery/README.md`](docs/gallery/README.md)** — brand palette, source paths, and how to
-regenerate real gameplay screenshots with `tools/capture_previews.gd` / `qa/capture_uiux.gd`.
+This repository is the cleaned, audited, fully documented production source (version **v0.3-b2-android-lan**: Build 2 Android LAN multiplayer fixes — non-Gradle manifest permissions, explicit IPv4 ENet bind, `/24` unicast discovery sweep, and async vehicle-handshake race fix on top of the desert circuit map, clean-road visuals, and identity-v2 loading screen). It is the single authoritative source of the project.
 
 ## Overview
 
@@ -136,8 +118,7 @@ Full details: `documentation/ARCHITECTURE.md`. Cleanup provenance: `documentatio
 
 | Item | Value |
 |---|---|
-| Status | **v0.3-b1-android-lan** · Android versionCode **13** · LAN multiplayer on Wi-Fi / hotspot |
-| Source version | `v0.3-b1-android-lan` (Android versionCode 13) |
+| Source version | `v0.3-b2-android-lan` (Android versionCode 14) |
 | Engine | Godot **4.7.2-stable**, GL Compatibility, Jolt 60 Hz |
 | Language of code | English (GDScript) · UI strings Persian (RTL) |
 | **AI agents: start here** | **[`AGENTS.md`](AGENTS.md)** — repo map, run/test commands, mandatory conventions, asset-licence rules |

@@ -227,6 +227,11 @@ func _ready() -> void:
 		if am.has_method("play_menu_music"):
 			am.call("play_menu_music")
 	_create_btn.grab_focus()
+	var ip_timer := Timer.new()
+	ip_timer.wait_time = 2.0
+	ip_timer.autostart = true
+	ip_timer.timeout.connect(_refresh_own_ip)
+	add_child(ip_timer)
 	var d := UiTheme.fade_sec(UiTheme.MOTION_MEDIUM_MS)
 	if d > 0.0:
 		_panel.modulate.a = 0.0

@@ -23,7 +23,7 @@ Design invariants (enforced by tests, do not break them):
 | Path | Contents |
 |---|---|
 | `project.godot` | Engine config: main scene, input actions, GL Compatibility, Jolt, 60 Hz physics |
-| `export_presets.cfg` | Android preset (`k2-v0.3-b1-android-lan-arm64.apk`, `v0.3-b1-android-lan` / code 13); excludes `tests/`, `tools/`, `qa/`, `reports/` |
+| `export_presets.cfg` | Android preset (`k2-v0.3-b2-android-lan-arm64.apk`, `v0.3-b2-android-lan` / code 14); excludes `tests/`, `tools/`, `qa/`, `reports/` |
 | `scenes/main/` | `main_driving_template.tscn` — the playable scene (5 root nodes; content code-driven) |
 | `scenes/multiplayer/` | `lan_lobby.tscn`, `lan_game.tscn` — 2-player local Wi-Fi / hotspot LAN lobby and driving scene |
 | `scenes/ui/` | `main_menu.tscn`, `settings_panel.tscn`, `vehicle_hud.tscn`, `loading_screen.tscn` (thin scenes: root node + script) |

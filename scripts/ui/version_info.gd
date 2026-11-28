@@ -9,7 +9,7 @@ extends RefCounted
 ## project root to push the value into export_presets.cfg and the docs.
 
 const BASE := "v0.3"
-const TRACK := "b1-android-lan"
+const TRACK := "b2-android-lan"
 ## Android/Play versionCode — must only ever increase.
 ## v0.1-b2 was an undelivered redesign branch (session 1); b3 skips to code 3
 ## so the versionCode stays monotonic even if a b2 build was ever installed.
@@ -29,7 +29,11 @@ const TRACK := "b1-android-lan"
 ## v0.3-b1-android-lan (Android LAN multiplayer fixes: Wi-Fi/multicast permissions, interface-aware
 ## LAN IP selection, port 42425 discovery/advertise fix, periodic beacons & hotspot subnet/gateway
 ## targets, Persian-numeral IP normalization, SceneTransition queuing, and LAN sync freeze fix)
-## uses code 13.
-const CODE := 13
+## used code 13.
+## v0.3-b2-android-lan (Build 2 Android LAN fixes: standard boolean manifest permissions for
+## non-Gradle export, ENet explicit IPv4 0.0.0.0 bind & reconnect slots, /24 unicast discovery
+## sweep bypassing Wi-Fi broadcast filters, reliable _ack_vehicle handshake eliminating async
+## scene-load sync deadlock, Basis orthonormalization, and live lobby IP refresh) uses code 14.
+const CODE := 14
 const BUILD := BASE + "-" + TRACK
 const DISPLAY := "K2 · " + BUILD

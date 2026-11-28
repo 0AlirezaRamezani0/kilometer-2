@@ -190,10 +190,10 @@ func _run() -> void:
 		track.reset_lap()
 
 	# ---- 5. version ---------------------------------------------------------------
-	# v0.3-b1-android-lan: Android LAN discovery/sync fixes increment the version. CODE must
-	# only ever increase, and 13 > 12 keeps Android from rejecting the upgrade.
-	check(VersionInfo.BUILD == "v0.3-b1-android-lan" and VersionInfo.CODE == 13,
-		"version_is_v0_3_b1_android_lan", VersionInfo.BUILD)
+	# v0.3-b2-android-lan: Build 2 Android LAN discovery/handshake fixes increment the version. CODE must
+	# only ever increase, and 14 > 13 keeps Android from rejecting the upgrade.
+	check(VersionInfo.BUILD == "v0.3-b2-android-lan" and VersionInfo.CODE == 14,
+		"version_is_v0_3_b2_android_lan", VersionInfo.BUILD)
 
 	print("=== DESERT CIRCUIT + LOADING SUMMARY: %d passed, %d failed ===" % [passed, failed])
 	quit(0 if failed == 0 else 1)

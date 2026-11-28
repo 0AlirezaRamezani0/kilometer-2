@@ -1,6 +1,23 @@
 # Changelog (`CHANGELOG.md`)
 All notable changes to Kilometer 2 are documented in this file.
 
+## [v0.3-b2-android-lan] — Android LAN multiplayer fixes (Build 2) — 2026-11-27
+
+Version **v0.3-b2-android-lan**, Android versionCode **14**. Addresses remaining Android LAN discovery, connection, and in-game sync failures reported after build 1.
+
+### Fixed
+- `export_presets.cfg`: added Godot 4's built-in boolean permission keys (`permissions/access_network_state=true`, `permissions/access_wifi_state=true`, `permissions/change_wifi_multicast_state=true`) alongside `custom_permissions` so non-Gradle template exports (`gradle_build/use_gradle_build=false`) actually inject those permissions into `AndroidManifest.xml`.
+- `scripts/multiplayer/lan_game.gd`:
+  - Fixed a scene-load race deadlock where a faster-loading peer spawned the slower peer's car (`_remote_car != null`) and immediately stopped re-sending `_announce_vehicle`, leaving the slower peer with `_remote_car == null` and skipping `_sync_state` indefinitely. Added a reliable `_ack_vehicle` confirmation and decoupled `_sync_state` streaming from `_remote_car != null`.
+  - Orthonormalized streamed and interpolated `Transform3D` values to prevent Jolt `Basis` scale drift errors during interpolation.
+- `scripts/multiplayer/lan_session.gd`:
+  - Added `en.set_bind_ip("0.0.0.0")` in `host_room()` so ENet explicitly binds IPv4 `0.0.0.0:42424` instead of an IPv6 `::` wildcard socket on Android hotspot/tethering interfaces.
+  - Increased `MAX_CLIENTS` from `1` to `4` with single-partner lock (`_partner_peer_id` + `refuse_new_connections = true` once paired) so lingering half-open ENet peer slots never block reconnects; raised `CONNECT_TIMEOUT_SEC` to `12.0 s`.
+  - Added a batched unicast `/24` subnet sweep (`_begin_sweep` / `_step_sweep`, 32 hosts per `0.1 s`) when no host has been discovered yet, bypassing Android Wi-Fi drivers and routers that drop UDP broadcast packets.
+  - Fixed `"lo"` / `"sit"` substring false-positives in `_interface_score()`, added `"*"` bind fallback in `_bind_udp()`, scanned `IP.get_local_addresses()` for private IPv4 targets, and stopped discovery/advertising sockets cleanly in `_open_game()`.
+- `scripts/multiplayer/lan_lobby.gd`: added a 2-second IP refresh timer so turning on Wi-Fi or Hotspot while already in the lobby updates `OwnIpLabel` automatically.
+- `tests/test_lan_discovery.gd`: added unit check for `_interface_score()` avoiding `"lo"` substring false-positives.
+
 ## [v0.3-b1-android-lan] — Android LAN multiplayer fixes — 2026-11-27
 
 Version **v0.3-b1-android-lan**, Android versionCode **13**. Fixes the local LAN multiplayer flow on Android devices (Wi-Fi and mobile hotspot) and aligns project documentation/version metadata with `v0.3`.
